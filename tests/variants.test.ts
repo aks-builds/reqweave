@@ -52,6 +52,36 @@ describe("depth tiers", () => {
     const exh = generateVariants(ep("getPetById"), { depth: "exhaustive" }).variants.length;
     expect(exh).toBeGreaterThanOrEqual(std);
   });
+
+  it("exhaustive expands request-body enum and numeric-boundary fields", () => {
+    const createThing = {
+      id: "createThing",
+      method: "POST",
+      routeTemplate: "/things",
+      params: [],
+      requestBody: {
+        required: true,
+        contentType: "application/json",
+        schema: {
+          type: "object",
+          properties: {
+            status: { type: "string", enum: ["draft", "published"] },
+            score: { type: "integer", minimum: 0, maximum: 100 },
+          },
+          required: ["status"],
+        },
+      },
+      responses: [{ status: 201 }],
+      auth: { required: false, schemes: [{ type: "none" }] },
+    } as unknown as Ir["endpoints"][number];
+
+    const names = generateVariants(createThing, { depth: "exhaustive" }).variants.map((v) => v.name);
+    // "draft" is the default (first enum member) so that variant dedupes away;
+    // the distinct values survive.
+    expect(names).toContain("body.status = published");
+    expect(names).toContain("body.score = minimum");
+    expect(names).toContain("body.score = maximum");
+  });
 });
 
 describe("auth handling", () => {

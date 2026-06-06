@@ -14,7 +14,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   collections/**base-class inheritance**/**record positional params**, responses,
   auth (incl. `RequireAuthorization`), diagnostics.
 - **Variant engine**: depth tiers (`minimal`/`standard`/`exhaustive`), pairwise
-  coverage, boundary/invalid/auth/per-status variants, deterministic, capped.
+  coverage, boundary/invalid/auth/per-status variants, request-body enum and
+  numeric-boundary field expansion (exhaustive), deterministic, capped.
 - **7 native exporters**: Postman v2.1, OpenAPI 3.1, Insomnia, Bruno, Hoppscotch,
   Thunder Client, `.http` — each with a secret-safe environment template.
 - **CLI** (`reqweave generate|list-endpoints|inspect`) chaining analyzer → engine
