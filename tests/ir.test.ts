@@ -69,6 +69,11 @@ describe("parseIr", () => {
   it("throws a readable error on schema-invalid JSON", () => {
     expect(() => parseIr('{"irVersion":"0.1.0"}')).toThrow(/Invalid reqweave IR/);
   });
+
+  it("throws on an incompatible IR version (no silent consumption)", () => {
+    const bumped = JSON.stringify({ ...valid, irVersion: "9.0.0" });
+    expect(() => parseIr(bumped)).toThrow(/not compatible/);
+  });
 });
 
 describe("isCompatibleIrVersion", () => {

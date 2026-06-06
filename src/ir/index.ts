@@ -30,6 +30,12 @@ export function parseIr(json: string): Ir {
   if (!r.success) {
     throw new Error(`Invalid reqweave IR:\n${z.prettifyError(r.error)}`);
   }
+  if (!isCompatibleIrVersion(r.data.irVersion)) {
+    throw new Error(
+      `reqweave IR version "${r.data.irVersion}" is not compatible with this build (expects ${IR_VERSION}). ` +
+        `Regenerate the IR with a matching analyzer.`,
+    );
+  }
   return r.data;
 }
 
