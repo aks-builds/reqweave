@@ -2,13 +2,14 @@
  * reqweave CLI. Chains analyzer -> variant engine -> exporters.
  * Synchronous (the analyzer runs via spawnSync); returns a process exit code.
  */
-import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { generateAll, generateVariants } from "../variants/index.js";
 import { exportCollections } from "../exporters/index.js";
 import { DEFAULT_BASE_URL, DEFAULT_GENERATED_AT } from "../exporters/types.js";
 import { SUPPORTED_TOOLS, DEPTH_LEVELS, isSupportedTool, type SupportedTool, type Depth } from "../constants.js";
 import { analyze, type AnalyzeOptions } from "./analyzer-runner.js";
+import { loadConfig, configTemplate, CONFIG_FILENAME } from "./config.js";
 
 function version(): string {
   try {
@@ -60,6 +61,8 @@ export function run(argv: string[]): number {
         return cmdList(argv.slice(1));
       case "inspect":
         return cmdInspect(argv.slice(1));
+      case "init":
+        return cmdInit(argv.slice(1));
       default:
         process.stderr.write(`reqweave: unknown command '${cmd}'. Run 'reqweave --help'.\n`);
         return 2;
@@ -92,13 +95,21 @@ function cmdGenerate(args: string[]): number {
   const a = analyzeOpts(f);
   if (!a) return 2;
 
-  const depth = (f.values.depth ?? "standard") as Depth;
+  // Precedence: built-in defaults < reqweave.config.json < flags.
+  const config = loadConfig(a.path);
+  a.opts.service = f.values.service ?? config.service ?? a.opts.service;
+  a.opts.build = f.bools.has("build") || Boolean(config.build);
+
+  const depth = (f.values.depth ?? config.depth ?? "standard") as Depth;
   if (!(DEPTH_LEVELS as readonly string[]).includes(depth)) {
     process.stderr.write(`reqweave: invalid --depth '${depth}'. One of: ${DEPTH_LEVELS.join(", ")}.\n`);
     return 2;
   }
 
-  const toolsArg = f.values.tools ?? "all";
+  const configTools = config.tools === "all" || config.tools === undefined
+    ? "all"
+    : (config.tools as string[]).join(",");
+  const toolsArg = f.values.tools ?? configTools;
   const tools: SupportedTool[] =
     toolsArg === "all" ? [...SUPPORTED_TOOLS] : toolsArg.split(",").map((t) => t.trim()).filter(Boolean) as SupportedTool[];
   const bad = tools.filter((t) => !isSupportedTool(t));
@@ -121,13 +132,13 @@ function cmdGenerate(args: string[]): number {
     variants,
     tools,
     options: {
-      baseUrl: f.values["base-url"] ?? DEFAULT_BASE_URL,
+      baseUrl: f.values["base-url"] ?? config.baseUrl ?? DEFAULT_BASE_URL,
       generatedAt: f.values["generated-at"] ?? DEFAULT_GENERATED_AT,
-      tests: !f.bools.has("no-tests"),
+      tests: f.bools.has("no-tests") ? false : config.tests ?? true,
     },
   });
 
-  const outDir = resolve(f.values.out ?? "reqweave-out");
+  const outDir = resolve(f.values.out ?? config.out ?? "reqweave-out");
   for (const file of files) {
     const dest = join(outDir, file.path);
     mkdirSync(dirname(dest), { recursive: true });
@@ -179,6 +190,20 @@ function cmdInspect(args: string[]): number {
   return 0;
 }
 
+function cmdInit(args: string[]): number {
+  const f = parseFlags(args, new Set(["force"]));
+  const dir = resolve(f.positionals[0] ?? ".");
+  const dest = join(dir, CONFIG_FILENAME);
+  if (existsSync(dest) && !f.bools.has("force")) {
+    process.stderr.write(`reqweave: ${CONFIG_FILENAME} already exists (use --force to overwrite).\n`);
+    return 1;
+  }
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(dest, configTemplate());
+  process.stdout.write(`reqweave: wrote ${dest}\n`);
+  return 0;
+}
+
 function printUsage(): void {
   process.stdout.write(
     `reqweave v${version()} - code in, importable API collections out.\n\n` +
@@ -186,7 +211,9 @@ function printUsage(): void {
       `  reqweave generate <path> [--out DIR] [--tools all|a,b] [--depth ${DEPTH_LEVELS.join("|")}]\n` +
       `                           [--base-url URL] [--service NAME] [--build] [--strict] [--no-tests] [--ir FILE]\n` +
       `  reqweave list-endpoints <path> [--build] [--ir FILE]\n` +
-      `  reqweave inspect <path> <endpointId> [--depth LEVEL] [--ir FILE]\n\n` +
+      `  reqweave inspect <path> <endpointId> [--depth LEVEL] [--ir FILE]\n` +
+      `  reqweave init [dir] [--force]            scaffold ${CONFIG_FILENAME}\n\n` +
+      `Config: ${CONFIG_FILENAME} (tools/depth/baseUrl/out/service/tests/build); flags override it.\n` +
       `Tools: ${SUPPORTED_TOOLS.join(", ")}\n`,
   );
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync, mkdtempSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdtempSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -60,5 +60,30 @@ describe("other commands", () => {
 
   it("generate without a path exits 2", () => {
     expect(run(["generate"])).toBe(2);
+  });
+});
+
+describe("config + init (A4)", () => {
+  it("init scaffolds reqweave.config.json; refuses to overwrite without --force", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "reqweave-init-"));
+    expect(run(["init", dir])).toBe(0);
+    expect(existsSync(path.join(dir, "reqweave.config.json"))).toBe(true);
+    expect(run(["init", dir])).toBe(1); // exists
+    expect(run(["init", dir, "--force"])).toBe(0);
+  });
+
+  it("generate honors reqweave.config.json (tools), and flags override it", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "reqweave-cfg-"));
+    writeFileSync(path.join(dir, "reqweave.config.json"), JSON.stringify({ tools: ["postman"], depth: "minimal" }));
+
+    const out1 = mkdtempSync(path.join(tmpdir(), "reqweave-o1-"));
+    expect(run(["generate", dir, "--ir", irFixture, "--out", out1, "--generated-at", "2026-01-01T00:00:00Z"])).toBe(0);
+    expect(existsSync(path.join(out1, "postman"))).toBe(true);
+    expect(existsSync(path.join(out1, "openapi"))).toBe(false); // config limited tools to postman
+
+    const out2 = mkdtempSync(path.join(tmpdir(), "reqweave-o2-"));
+    run(["generate", dir, "--ir", irFixture, "--out", out2, "--tools", "openapi", "--generated-at", "2026-01-01T00:00:00Z"]);
+    expect(existsSync(path.join(out2, "openapi"))).toBe(true); // flag overrides config
+    expect(existsSync(path.join(out2, "postman"))).toBe(false);
   });
 });
