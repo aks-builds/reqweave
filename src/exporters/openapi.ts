@@ -1,6 +1,10 @@
 import type { Exporter, ExportContext, ExportedFile } from "./types.js";
 import type { AuthScheme, JsonSchemaNode } from "../ir/index.js";
+import { genValue } from "../variants/index.js";
 import { stableStringify, slug } from "./util.js";
+
+const example = (schema: JsonSchemaNode): unknown =>
+  genValue(schema, { kind: "valid", includeOptional: true, depth: 0 });
 
 const STATUS_TEXT: Record<number, string> = {
   200: "OK",
@@ -104,7 +108,14 @@ export const openapiExporter: Exporter = {
             {
               description: r.description ?? STATUS_TEXT[r.status] ?? "Response",
               ...(r.schema
-                ? { content: { [r.contentType ?? "application/json"]: { schema: cleanSchema(r.schema) } } }
+                ? {
+                    content: {
+                      [r.contentType ?? "application/json"]: {
+                        schema: cleanSchema(r.schema),
+                        example: example(r.schema),
+                      },
+                    },
+                  }
                 : {}),
             },
           ]),
@@ -114,7 +125,12 @@ export const openapiExporter: Exporter = {
       if (ep.requestBody) {
         op.requestBody = {
           required: ep.requestBody.required,
-          content: { [ep.requestBody.contentType]: { schema: cleanSchema(ep.requestBody.schema) } },
+          content: {
+            [ep.requestBody.contentType]: {
+              schema: cleanSchema(ep.requestBody.schema),
+              example: example(ep.requestBody.schema),
+            },
+          },
         };
       }
 
