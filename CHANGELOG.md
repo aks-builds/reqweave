@@ -31,6 +31,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   OpenAPI 3.x document into the IR ($ref resolution, params, bodies, responses,
   security→auth) → all 7 exporters. Foundation for build-mode; works for any
   OpenAPI-producing backend regardless of language.
+- **Build-mode reconciliation** (Bundle B): `--build` / `--build-openapi <file>`
+  (and MCP `build` / `buildOpenapi`) reconcile the static pass with the project's
+  own build-produced OpenAPI as ground truth (build wins; every divergence becomes
+  a diagnostic — endpoints only-in-build are added, only-in-static are kept and
+  flagged). `--build` auto-discovers `openapi.json` / `swagger.json` in the project
+  tree; reqweave never executes project code — the project's build emits the doc,
+  reqweave only reads it. Degrades cleanly to static with a clear diagnostic.
 - **Richer auth-scheme detection** (Bundle B): classify JWT/bearer, OAuth2/OIDC,
   API-key, and basic from `AddAuthentication` wiring and
   `[Authorize(AuthenticationSchemes=…)]`; the "assumed Bearer" diagnostic now
