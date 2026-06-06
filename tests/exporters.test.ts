@@ -57,6 +57,15 @@ describe("postman", () => {
     const bearer = env.values.find((v: { key: string }) => v.key === "bearerToken");
     expect(bearer.value).toBe("");
   });
+
+  it("nests tagged endpoints under a tag folder; leaves untagged endpoints top-level (A3)", () => {
+    const c = json(".postman_collection.json");
+    const names = c.item.map((i: { name: string }) => i.name);
+    expect(names).toContain("pets"); // getPetById has tag "pets"
+    expect(names).toContain("createPet"); // untagged -> endpoint folder
+    const petsFolder = c.item.find((i: { name: string }) => i.name === "pets");
+    expect(petsFolder.item.map((i: { name: string }) => i.name)).toContain("getPetById");
+  });
 });
 
 describe("openapi", () => {

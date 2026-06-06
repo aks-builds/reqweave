@@ -1,5 +1,6 @@
 /** Shared exporter helpers: URL building, placeholder transforms, stable JSON. */
 import type { RequestVariant } from "../variants/index.js";
+import type { Ir } from "../ir/index.js";
 
 /** Substitute {token} path params with their values. */
 export function resolvePath(routeTemplate: string, pathParams: Record<string, string>): string {
@@ -106,4 +107,29 @@ export function groupByEndpoint(variants: RequestVariant[]): Array<{ endpointId:
     map.get(v.endpointId)!.push(v);
   }
   return order.map((id) => ({ endpointId: id, variants: map.get(id)! }));
+}
+
+export interface TagGroup {
+  tag: string;
+  endpoints: Array<{ endpointId: string; variants: RequestVariant[] }>;
+}
+
+/**
+ * Group endpoints by their first tag (fallback: the endpoint id), preserving
+ * first-seen order. Endpoints with no tag end up in a single-endpoint group
+ * whose tag equals the endpoint id, so consumers can avoid double-nesting.
+ */
+export function groupByTag(ir: Ir, variants: RequestVariant[]): TagGroup[] {
+  const tagOf = new Map(ir.endpoints.map((e) => [e.id, e.tags && e.tags.length > 0 ? (e.tags[0] as string) : e.id]));
+  const order: string[] = [];
+  const byTag = new Map<string, Array<{ endpointId: string; variants: RequestVariant[] }>>();
+  for (const g of groupByEndpoint(variants)) {
+    const tag = tagOf.get(g.endpointId) ?? g.endpointId;
+    if (!byTag.has(tag)) {
+      byTag.set(tag, []);
+      order.push(tag);
+    }
+    byTag.get(tag)!.push(g);
+  }
+  return order.map((tag) => ({ tag, endpoints: byTag.get(tag)! }));
 }
