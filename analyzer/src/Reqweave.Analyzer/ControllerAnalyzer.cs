@@ -39,12 +39,14 @@ public sealed class ControllerAnalyzer
 
     private readonly SourceIndex _index;
     private readonly SchemaMapper _mapper;
+    private readonly AuthSchemeDetector _auth;
     private readonly List<Diagnostic> _diagnostics = new();
 
     public ControllerAnalyzer(SourceIndex index)
     {
         _index = index;
         _mapper = new SchemaMapper(index, _diagnostics);
+        _auth = new AuthSchemeDetector(index);
     }
 
     public (IReadOnlyList<Endpoint> Endpoints, IReadOnlyList<Diagnostic> Diagnostics) Analyze()
@@ -103,7 +105,7 @@ public sealed class ControllerAnalyzer
     {
         var controllerName = ControllerName(cls);
         var classRoute = ClassRoute(cls, controllerName);
-        var classAuthorize = HasAttr(cls.AttributeLists, "Authorize");
+        var classAuthorizeAttr = FindAttr(cls.AttributeLists, "Authorize");
 
         foreach (var method in cls.Members.OfType<MethodDeclarationSyntax>())
         {
@@ -122,7 +124,7 @@ public sealed class ControllerAnalyzer
                 var methodRoute = StringArg(attr)
                     ?? (FindAttr(method.AttributeLists, "Route") is { } r ? StringArg(r) : null);
                 var route = RouteUtil.Normalize(Combine(classRoute, methodRoute, method.Identifier.Text));
-                yield return BuildEndpoint(cls, method, controllerName, verb, route, classAuthorize);
+                yield return BuildEndpoint(cls, method, controllerName, verb, route, classAuthorizeAttr);
             }
         }
     }
@@ -133,7 +135,7 @@ public sealed class ControllerAnalyzer
         string controllerName,
         string verb,
         string route,
-        bool classAuthorize)
+        AttributeSyntax? classAuthorizeAttr)
     {
         var id = $"{controllerName}.{method.Identifier.Text}";
         var tokens = RouteUtil.Tokens(route);
@@ -170,7 +172,7 @@ public sealed class ControllerAnalyzer
         }
 
         var responses = Responses(method, verb);
-        var auth = AuthFor(method, classAuthorize, id);
+        var auth = AuthFor(method, classAuthorizeAttr, id);
         var summary = TryGetSummary(method);
 
         return new Endpoint(
@@ -300,24 +302,28 @@ public sealed class ControllerAnalyzer
         return _mapper.Map(unwrapped);
     }
 
-    private Auth AuthFor(MethodDeclarationSyntax method, bool classAuthorize, string endpointId)
+    private Auth AuthFor(MethodDeclarationSyntax method, AttributeSyntax? classAuthorizeAttr, string endpointId)
     {
-        var methodAuthorize = HasAttr(method.AttributeLists, "Authorize");
+        var methodAuthorizeAttr = FindAttr(method.AttributeLists, "Authorize");
         var allowAnonymous = HasAttr(method.AttributeLists, "AllowAnonymous");
-        var required = (classAuthorize || methodAuthorize) && !allowAnonymous;
+        var required = (classAuthorizeAttr is not null || methodAuthorizeAttr is not null) && !allowAnonymous;
 
         if (!required)
         {
             return new Auth(false, new[] { new AuthScheme("none") });
         }
 
-        _diagnostics.Add(new Diagnostic(
-            "assumedConvention",
-            "Assumed Bearer auth for an [Authorize] endpoint; confirm the actual scheme.",
-            "info",
-            endpointId));
+        var (schemes, confident) = _auth.Resolve(methodAuthorizeAttr ?? classAuthorizeAttr);
+        if (!confident)
+        {
+            _diagnostics.Add(new Diagnostic(
+                "assumedConvention",
+                "Assumed Bearer auth for an [Authorize] endpoint; no auth scheme configuration detected.",
+                "info",
+                endpointId));
+        }
 
-        return new Auth(true, new[] { new AuthScheme("bearer", "header", "Authorization") });
+        return new Auth(true, schemes);
     }
 
     private static string ClassRoute(ClassDeclarationSyntax cls, string controllerName)
