@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "irVersion": {
+      "type": "string"
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "basePaths": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "servers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "basePaths"
+      ],
+      "additionalProperties": false
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD",
+              "OPTIONS"
+            ]
+          },
+          "routeTemplate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "deprecated": {
+            "type": "boolean"
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "in": {
+                  "type": "string",
+                  "enum": [
+                    "route",
+                    "query",
+                    "header",
+                    "cookie"
+                  ]
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "schema": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "example": {}
+              },
+              "required": [
+                "name",
+                "in",
+                "required",
+                "schema"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "requestBody": {
+            "type": "object",
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "contentType": {
+                "type": "string",
+                "minLength": 1
+              },
+              "schema": {
+                "$ref": "#/$defs/__schema0"
+              },
+              "examples": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "required": [
+              "required",
+              "contentType",
+              "schema"
+            ],
+            "additionalProperties": false
+          },
+          "responses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 599
+                },
+                "description": {
+                  "type": "string"
+                },
+                "contentType": {
+                  "type": "string"
+                },
+                "schema": {
+                  "$ref": "#/$defs/__schema0"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "auth": {
+            "type": "object",
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "schemes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "bearer",
+                        "apiKey",
+                        "basic",
+                        "oauth2",
+                        "none"
+                      ]
+                    },
+                    "location": {
+                      "type": "string",
+                      "enum": [
+                        "header",
+                        "query",
+                        "cookie"
+                      ]
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "required",
+              "schemes"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "routeTemplate",
+          "params",
+          "responses",
+          "auth"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "unresolvedType",
+              "ambiguousRoute",
+              "assumedConvention",
+              "unsupportedFeature"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "endpointId": {
+            "type": "string"
+          },
+          "severity": {
+            "default": "warning",
+            "type": "string",
+            "enum": [
+              "info",
+              "warning",
+              "error"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "severity"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "analyzerVersion": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "static",
+            "build"
+          ]
+        },
+        "sourceCommit": {
+          "type": "string"
+        },
+        "generatedAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "analyzerVersion",
+        "mode",
+        "generatedAt"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "irVersion",
+    "service",
+    "endpoints",
+    "diagnostics",
+    "meta"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "integer",
+            "boolean",
+            "object",
+            "array",
+            "null"
+          ]
+        },
+        "format": {
+          "type": "string"
+        },
+        "enum": {
+          "type": "array",
+          "items": {}
+        },
+        "const": {},
+        "items": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "properties": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nullable": {
+          "type": "boolean"
+        },
+        "oneOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "anyOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "allOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "$ref": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "example": {},
+        "default": {},
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "pattern": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    }
+  }
+}

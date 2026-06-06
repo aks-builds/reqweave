@@ -1,13 +1,11 @@
 /**
  * reqweave core library — public entry point.
  *
- * Phase 0: exposes package metadata and the planned surface as typed stubs so
- * the build, types, and tests are exercised. The IR contract (Phase 1), the
- * variant engine (Phase 4), and exporters (Phase 5) attach here in later phases.
+ * Re-exports the IR contract (Phase 1). The variant engine (Phase 4) and
+ * exporters (Phase 5) attach here in later phases.
  */
 
-/** The reqweave IR schema version this build speaks. Bumped when the IR changes. */
-export const IR_VERSION = "0.1.0" as const;
+export * from "./ir/index.js";
 
 /** Tools reqweave can export to in M1. */
 export const SUPPORTED_TOOLS = [

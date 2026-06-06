@@ -1,0 +1,77 @@
+{
+  "irVersion": "0.1.0",
+  "service": {
+    "name": "PetStore",
+    "basePaths": ["/api/v1"],
+    "versions": ["v1"],
+    "servers": ["https://api.example.com"]
+  },
+  "endpoints": [
+    {
+      "id": "getPetById",
+      "method": "GET",
+      "routeTemplate": "/pets/{id}",
+      "operationId": "getPetById",
+      "summary": "Get a pet by id",
+      "tags": ["pets"],
+      "params": [
+        {
+          "name": "id",
+          "in": "route",
+          "required": true,
+          "schema": { "type": "integer", "minimum": 1 }
+        },
+        {
+          "name": "expand",
+          "in": "query",
+          "required": false,
+          "schema": { "type": "string", "enum": ["owner", "vet"] }
+        }
+      ],
+      "responses": [
+        {
+          "status": 200,
+          "contentType": "application/json",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "name": { "type": "string" }
+            },
+            "required": ["id", "name"]
+          }
+        },
+        { "status": 404, "description": "Not found" }
+      ],
+      "auth": {
+        "required": true,
+        "schemes": [{ "type": "bearer", "location": "header", "name": "Authorization" }]
+      }
+    },
+    {
+      "id": "createPet",
+      "method": "POST",
+      "routeTemplate": "/pets",
+      "params": [],
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 50 }
+          },
+          "required": ["name"]
+        }
+      },
+      "responses": [{ "status": 201 }, { "status": 400 }],
+      "auth": { "required": true, "schemes": [{ "type": "bearer" }] }
+    }
+  ],
+  "diagnostics": [],
+  "meta": {
+    "analyzerVersion": "0.1.0",
+    "mode": "static",
+    "generatedAt": "2026-06-06T00:00:00Z"
+  }
+}
