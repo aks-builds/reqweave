@@ -27,6 +27,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Project scaffold & CI**: stable aggregate `test` gate, CodeQL (security-extended),
   Dependabot, integration (real generate→import + determinism), auto-approve.
 
+- **Project config + `reqweave init`** (Bundle A): optional `reqweave.config.json`
+  (tools/depth/baseUrl/out/service/tests/build); precedence defaults < config < flags.
+- **OpenAPI examples** (Bundle A): request + response examples embedded in the spec.
 - **Runnable test assertions** in collections (Bundle A): each request asserts
   the variant's expected status, content-type, and — in Postman — the response
   JSON-Schema (graceful fallback elsewhere). On by default; `--no-tests` /
