@@ -8,3 +8,4 @@
 export * from "./ir/index.js";
 export * from "./constants.js";
 export * from "./variants/index.js";
+export * from "./exporters/index.js";
