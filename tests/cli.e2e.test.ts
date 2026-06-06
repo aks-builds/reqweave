@@ -87,3 +87,37 @@ describe("config + init (A4)", () => {
     expect(existsSync(path.join(out2, "postman"))).toBe(false);
   });
 });
+
+describe("install (A5)", () => {
+  it("install --only claude copies the skill into the agent dir (isolated temp HOME)", () => {
+    const fakeHome = mkdtempSync(path.join(tmpdir(), "reqweave-home-"));
+    const origHome = process.env.HOME;
+    const origUserProfile = process.env.USERPROFILE;
+    process.env.HOME = fakeHome; // os.homedir() on POSIX
+    process.env.USERPROFILE = fakeHome; // os.homedir() on Windows
+    let code = 1;
+    try {
+      code = run(["install", "--only", "claude"]);
+    } finally {
+      process.env.HOME = origHome;
+      process.env.USERPROFILE = origUserProfile;
+    }
+    expect(code).toBe(0);
+    expect(existsSync(path.join(fakeHome, ".claude", "skills", "reqweave", "SKILL.md"))).toBe(true);
+  });
+
+  it("dry-run writes nothing", () => {
+    const fakeHome = mkdtempSync(path.join(tmpdir(), "reqweave-home-"));
+    const origHome = process.env.HOME;
+    const origUserProfile = process.env.USERPROFILE;
+    process.env.HOME = fakeHome;
+    process.env.USERPROFILE = fakeHome;
+    try {
+      expect(run(["install", "--only", "claude", "--dry-run"])).toBe(0);
+    } finally {
+      process.env.HOME = origHome;
+      process.env.USERPROFILE = origUserProfile;
+    }
+    expect(existsSync(path.join(fakeHome, ".claude"))).toBe(false);
+  });
+});

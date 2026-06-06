@@ -2,7 +2,8 @@
  * reqweave CLI. Chains analyzer -> variant engine -> exporters.
  * Synchronous (the analyzer runs via spawnSync); returns a process exit code.
  */
-import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync, cpSync, copyFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { generateAll, generateVariants } from "../variants/index.js";
 import { exportCollections } from "../exporters/index.js";
@@ -63,6 +64,8 @@ export function run(argv: string[]): number {
         return cmdInspect(argv.slice(1));
       case "init":
         return cmdInit(argv.slice(1));
+      case "install":
+        return cmdInstall(argv.slice(1));
       default:
         process.stderr.write(`reqweave: unknown command '${cmd}'. Run 'reqweave --help'.\n`);
         return 2;
@@ -209,6 +212,100 @@ function cmdInit(args: string[]): number {
   return 0;
 }
 
+interface AgentTarget {
+  base: string;
+  kind: "dir" | "file" | "append";
+  dest: string;
+}
+
+function agentTargets(): Record<string, AgentTarget> {
+  const home = homedir();
+  return {
+    claude: { base: join(home, ".claude"), kind: "dir", dest: join(home, ".claude", "skills", "reqweave") },
+    codex: { base: join(home, ".codex"), kind: "dir", dest: join(home, ".codex", "skills", "reqweave") },
+    opencode: { base: join(home, ".config", "opencode"), kind: "dir", dest: join(home, ".config", "opencode", "skills", "reqweave") },
+    cursor: { base: join(home, ".cursor"), kind: "file", dest: join(home, ".cursor", "rules", "reqweave.mdc") },
+    gemini: { base: join(home, ".gemini"), kind: "append", dest: join(home, ".gemini", "GEMINI.md") },
+    windsurf: { base: join(home, ".codeium", "windsurf"), kind: "append", dest: join(home, ".codeium", "windsurf", "memories", "global_rules.md") },
+  };
+}
+
+/** Install the reqweave skill into each detected AI agent's skills dir (user level). */
+function cmdInstall(args: string[]): number {
+  const f = parseFlags(args, new Set(["force", "dry-run"]));
+  const only = f.values.only ? splitCsv(f.values.only) : null;
+  const skip = f.values.skip ? splitCsv(f.values.skip) : [];
+  const skillDir = resolve(__dirname, "..", "..", "skills", "reqweave");
+  if (!existsSync(skillDir)) {
+    process.stderr.write(`reqweave: skill not found at ${skillDir}\n`);
+    return 1;
+  }
+
+  const all = agentTargets();
+  const names = Object.keys(all).filter((n) => (only ? only.includes(n) : true) && !skip.includes(n));
+  process.stdout.write(`reqweave v${version()} - installing skill (user level)\n`);
+
+  const marker = "<!-- reqweave -->";
+  const pointer = `\n${marker}\nWhen asked to generate or import API collections from a service codebase, use the reqweave skill at ${join(skillDir, "SKILL.md")}.\n`;
+  let any = false;
+
+  for (const name of names) {
+    const a = all[name] as AgentTarget;
+    const forced = f.bools.has("force") || Boolean(only?.includes(name));
+    if (!existsSync(a.base) && !forced) {
+      process.stdout.write(`  ${name.padEnd(9)} skipped (not detected)\n`);
+      continue;
+    }
+    if (f.bools.has("dry-run")) {
+      process.stdout.write(`  ${name.padEnd(9)} would install -> ${a.dest}\n`);
+      any = true;
+      continue;
+    }
+
+    any = true;
+    mkdirSync(dirname(a.dest), { recursive: true });
+    if (a.kind === "dir") {
+      try {
+        // Let cpSync decide atomically: error if any dest file exists (no force).
+        cpSync(skillDir, a.dest, { recursive: true, force: f.bools.has("force"), errorOnExist: !f.bools.has("force") });
+        process.stdout.write(`  ${name.padEnd(9)} installed -> ${a.dest}\n`);
+      } catch (e) {
+        const code = (e as NodeJS.ErrnoException).code;
+        if (code === "ERR_FS_CP_EEXIST" || code === "EEXIST") {
+          process.stdout.write(`  ${name.padEnd(9)} exists (use --force)\n`);
+        } else {
+          throw e;
+        }
+      }
+    } else if (a.kind === "file") {
+      copyFileSync(join(skillDir, "SKILL.md"), a.dest);
+      process.stdout.write(`  ${name.padEnd(9)} installed -> ${a.dest}\n`);
+    } else {
+      let current = "";
+      try {
+        current = readFileSync(a.dest, "utf8"); // read-or-empty; no check-then-act
+      } catch {
+        current = "";
+      }
+      if (current.includes(marker)) {
+        process.stdout.write(`  ${name.padEnd(9)} already referenced\n`);
+        continue;
+      }
+      writeFileSync(a.dest, current + pointer);
+      process.stdout.write(`  ${name.padEnd(9)} pointer added -> ${a.dest}\n`);
+    }
+  }
+
+  if (!any) {
+    process.stdout.write("\n  No agents detected. Re-run with --only claude (or another) to force.\n");
+  }
+  return 0;
+}
+
+function splitCsv(s: string): string[] {
+  return s.split(",").map((x) => x.trim()).filter(Boolean);
+}
+
 function printUsage(): void {
   process.stdout.write(
     `reqweave v${version()} - code in, importable API collections out.\n\n` +
@@ -217,7 +314,8 @@ function printUsage(): void {
       `                           [--base-url URL] [--service NAME] [--build] [--strict] [--no-tests] [--ir FILE]\n` +
       `  reqweave list-endpoints <path> [--build] [--ir FILE]\n` +
       `  reqweave inspect <path> <endpointId> [--depth LEVEL] [--ir FILE]\n` +
-      `  reqweave init [dir] [--force]            scaffold ${CONFIG_FILENAME}\n\n` +
+      `  reqweave init [dir] [--force]            scaffold ${CONFIG_FILENAME}\n` +
+      `  reqweave install [--only a,b] [--skip x] [--force] [--dry-run]   install the skill into your AI agents\n\n` +
       `Config: ${CONFIG_FILENAME} (tools/depth/baseUrl/out/service/tests/build); flags override it.\n` +
       `Tools: ${SUPPORTED_TOOLS.join(", ")}\n`,
   );
