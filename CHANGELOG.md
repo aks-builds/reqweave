@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **TypeScript/Node analyzer** (Bundle C): a second source language, analyzed
+  **in-process** via the TypeScript compiler API (lazy-loaded) — no external
+  runtime/SDK. Extracts **NestJS** (`@Controller`/`@Get`…/`@Param`/`@Query`/
+  `@Body`/`@HttpCode`/`@UseGuards`/`@ApiBearerAuth`, DTO classes/interfaces/enums
+  with cross-file + inheritance resolution) at high fidelity, and **Express**
+  (`app`/`router.<method>`, `:id` route params, best-effort query/body from handler
+  usage with diagnostics). Language is auto-detected from the project; force it
+  with `--lang auto|dotnet|ts` (and the MCP `lang` arg). No code execution —
+  purely syntactic, deterministic.
 - **Universal IR** contract (zod schema + generated JSON-Schema with a drift guard).
 - **.NET static analyzer** (Roslyn, no build): ASP.NET Core attribute-routed
   controllers **and minimal APIs** (`app.MapGet/Post/Put/Delete/Patch`) → IR —

@@ -86,6 +86,7 @@ function analyzeOpts(f: Flags): { path: string; opts: AnalyzeOptions } | null {
     path,
     opts: {
       build: f.bools.has("build"),
+      language: (f.values.lang as AnalyzeOptions["language"]) ?? "auto",
       service: f.values.service,
       generatedAt: f.values["generated-at"] ?? DEFAULT_GENERATED_AT,
       irFile: f.values.ir,
@@ -313,7 +314,7 @@ function printUsage(): void {
     `reqweave v${version()} - code in, importable API collections out.\n\n` +
       `Usage:\n` +
       `  reqweave generate <path> [--out DIR] [--tools all|a,b] [--depth ${DEPTH_LEVELS.join("|")}]\n` +
-      `                           [--base-url URL] [--service NAME] [--build] [--build-openapi FILE] [--strict] [--no-tests] [--ir FILE] [--openapi FILE]\n` +
+      `                           [--lang auto|dotnet|ts] [--base-url URL] [--service NAME] [--build] [--build-openapi FILE] [--strict] [--no-tests] [--ir FILE] [--openapi FILE]\n` +
       `  reqweave list-endpoints <path> [--build] [--ir FILE]\n` +
       `  reqweave inspect <path> <endpointId> [--depth LEVEL] [--ir FILE]\n` +
       `  reqweave init [dir] [--force]            scaffold ${CONFIG_FILENAME}\n` +

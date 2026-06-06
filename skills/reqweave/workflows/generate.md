@@ -14,9 +14,12 @@ reqweave generate <path> [options]
 | `--depth LEVEL` | `standard` | `minimal` \| `standard` \| `exhaustive` (see choosing-depth). |
 | `--base-url URL` | `http://localhost:5000` | Default value written into env templates. |
 | `--service NAME` | derived from path | Service/collection name. |
-| `--build` | off | Build-mode analysis for higher fidelity (needs the .NET SDK + a buildable project). |
+| `--lang auto\|dotnet\|ts` | `auto` | Source language. `auto` detects from project files; `ts` = Node/TypeScript (NestJS/Express, analyzed in-process, no SDK). |
+| `--build` | off | Build-mode: reconcile static analysis with the project's build-produced OpenAPI as ground truth. |
+| `--build-openapi FILE` | — | Build-mode ground truth: reconcile with this build-produced OpenAPI doc. |
+| `--openapi FILE` | — | Skip the analyzer and import any OpenAPI 3.x doc directly. |
 | `--strict` | off | Fail the run if the analyzer emits any diagnostics. |
-| `--ir FILE` | — | Skip the analyzer and use an existing IR JSON (or an OpenAPI you've converted). |
+| `--ir FILE` | — | Skip the analyzer and use an existing IR JSON. |
 
 ## Steps
 1. **Confirm the target.** Ask which service path and which tools the user actually uses (default to `all` if unsure — it's cheap).
