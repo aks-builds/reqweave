@@ -16,13 +16,19 @@ const STATUS_TEXT: Record<number, string> = {
 };
 
 /** IR schema -> OpenAPI 3.1 schema (convert `nullable` to a type union). */
+/** Keys that would pollute Object.prototype if assigned dynamically. */
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+const isSafeKey = (k: string): boolean => !UNSAFE_KEYS.has(k);
+
 function cleanSchema(node: JsonSchemaNode): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(node)) {
-    if (k === "nullable") continue;
+    if (k === "nullable" || !isSafeKey(k)) continue;
     if (k === "properties" && v && typeof v === "object") {
       out.properties = Object.fromEntries(
-        Object.entries(v as Record<string, JsonSchemaNode>).map(([pk, pv]) => [pk, cleanSchema(pv)]),
+        Object.entries(v as Record<string, JsonSchemaNode>)
+          .filter(([pk]) => isSafeKey(pk))
+          .map(([pk, pv]) => [pk, cleanSchema(pv)]),
       );
     } else if (k === "items" && v) {
       out.items = cleanSchema(v as JsonSchemaNode);
@@ -70,11 +76,14 @@ export const openapiExporter: Exporter = {
   id: "openapi",
   label: "OpenAPI 3.1",
   export(ctx: ExportContext): ExportedFile[] {
-    const paths: Record<string, Record<string, unknown>> = {};
-    const securitySchemes: Record<string, unknown> = {};
+    // Null-prototype maps: keys here come from source (route templates, methods,
+    // scheme names), so a pathological name like "__proto__" must not pollute.
+    const paths: Record<string, Record<string, unknown>> = Object.create(null);
+    const securitySchemes: Record<string, unknown> = Object.create(null);
 
     for (const ep of ctx.ir.endpoints) {
-      const pathItem = (paths[ep.routeTemplate] ??= {});
+      if (!isSafeKey(ep.routeTemplate) || !isSafeKey(ep.method.toLowerCase())) continue;
+      const pathItem = (paths[ep.routeTemplate] ??= Object.create(null));
 
       const op: Record<string, unknown> = {
         operationId: ep.operationId ?? ep.id,

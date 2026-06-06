@@ -81,11 +81,17 @@ export function deterministicId(seed: string): string {
 }
 
 export function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "item";
+  // The first replace collapses every run of non-alphanumerics to a single
+  // "-", so at most one leading/trailing "-" remains — strip those with
+  // single-char (quantifier-free) patterns to avoid any backtracking (ReDoS).
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-/, "")
+      .replace(/-$/, "")
+      .slice(0, 80) || "item"
+  );
 }
 
 /** Group variants by their endpoint id, preserving first-seen order. */
