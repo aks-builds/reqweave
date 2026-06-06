@@ -1,0 +1,40 @@
+name: integration
+
+# End-to-end smoke: the built CLI and the analyzer actually execute. This grows
+# into a real "generate -> import" pipeline check (fixture ASP.NET API -> reqweave
+# -> Newman import) in Phase 9. For now it proves both runtimes run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      - name: CLI runs
+        run: |
+          set -euo pipefail
+          node bin/cli.js --version
+          node bin/cli.js --help | grep -q "generate"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Analyzer runs
+        run: dotnet run --project analyzer/src/Reqweave.Analyzer/Reqweave.Analyzer.csproj -- --version

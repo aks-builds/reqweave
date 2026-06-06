@@ -1,0 +1,19 @@
+# Source and build inputs (only bin/, dist/, skills/ ship — see package.json "files").
+src/
+tests/
+analyzer/
+docs/
+.github/
+.claude-plugin/
+
+# Configs and metadata.
+tsconfig.json
+vitest.config.*
+.editorconfig
+.gitattributes
+.gitignore
+*.tsbuildinfo
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md

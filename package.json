@@ -1,0 +1,57 @@
+{
+  "name": "reqweave",
+  "version": "0.0.0",
+  "description": "Read your service code; generate ready-to-import API collections for every testing tool (Postman, OpenAPI, Insomnia, Bruno, Hoppscotch, Thunder Client, .http) with exhaustive request variants.",
+  "bin": {
+    "reqweave": "bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "skills/",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "api",
+    "openapi",
+    "postman",
+    "insomnia",
+    "bruno",
+    "hoppscotch",
+    "thunder-client",
+    "http-client",
+    "dotnet",
+    "aspnetcore",
+    "roslyn",
+    "api-testing",
+    "code-to-collection",
+    "mcp",
+    "agent-skills",
+    "developer-tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aks-builds/reqweave.git"
+  },
+  "homepage": "https://github.com/aks-builds/reqweave#readme",
+  "bugs": {
+    "url": "https://github.com/aks-builds/reqweave/issues"
+  },
+  "author": "aks-builds",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

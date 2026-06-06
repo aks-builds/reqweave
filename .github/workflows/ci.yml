@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  node-matrix:
+    name: node-matrix (${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "22", "24"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  dotnet:
+    name: dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Test analyzer
+        run: dotnet test analyzer/test/Reqweave.Analyzer.Tests/Reqweave.Analyzer.Tests.csproj -v minimal
+
+  # Stable aggregate gate. The matrix above produces per-version checks
+  # ("node-matrix (20)", ...) whose names change as versions are added/dropped;
+  # this single, fixed "test" check is what the branch ruleset requires, so the
+  # required context never has to track the matrix.
+  test:
+    name: test
+    needs: [node-matrix, dotnet]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all CI jobs to succeed
+        run: |
+          if [ "${{ needs.node-matrix.result }}" != "success" ] || [ "${{ needs.dotnet.result }}" != "success" ]; then
+            echo "node-matrix=${{ needs.node-matrix.result }} dotnet=${{ needs.dotnet.result }}"
+            exit 1
+          fi

@@ -1,0 +1,21 @@
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+
+# .NET
+[Bb]in/
+[Oo]bj/
+*.user
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# reqweave output (generated collections in example runs)
+/out/
+*.local

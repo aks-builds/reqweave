@@ -1,0 +1,17 @@
+# Normalize line endings: text files LF in the repo.
+* text=auto eol=lf
+
+# Scripts and shells must stay LF even on Windows checkouts.
+*.sh   text eol=lf
+*.js   text eol=lf
+*.ts   text eol=lf
+*.cs   text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+
+# Binary assets.
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.svg  text eol=lf
