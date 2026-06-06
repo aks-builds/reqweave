@@ -138,19 +138,17 @@ function hasDotnet(): boolean {
 /** Resolve the source language: honor an explicit choice, else detect from files. */
 function resolveLanguage(sourcePath: string, requested: Language): Language {
   if (requested !== "auto") return requested;
-  let base = resolve(sourcePath);
-  try {
-    if (statSync(base).isFile()) {
-      return /\.(ts|tsx|mts|cts)$/i.test(base) ? "ts" : /\.(cs|csproj|sln)$/i.test(base) ? "dotnet" : "dotnet";
-    }
-  } catch {
-    return "dotnet";
-  }
-  let entries: string[];
+  const base = resolve(sourcePath);
+  // Try to list it as a directory; if that fails it's a file (or missing), so
+  // decide by extension. (try-then-act avoids a stat→read race.)
+  let entries: string[] | null = null;
   try {
     entries = readdirSync(base).map((e) => e.toLowerCase());
   } catch {
-    return "dotnet";
+    entries = null;
+  }
+  if (entries === null) {
+    return /\.(ts|tsx|mts|cts)$/i.test(base) ? "ts" : "dotnet";
   }
   if (entries.some((e) => e.endsWith(".csproj") || e.endsWith(".sln"))) return "dotnet";
   if (entries.includes("package.json") || entries.includes("tsconfig.json") || entries.some((e) => /\.(ts|tsx)$/.test(e))) {

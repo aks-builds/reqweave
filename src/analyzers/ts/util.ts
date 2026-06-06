@@ -5,7 +5,7 @@
  */
 import type * as TS from "typescript";
 import { createRequire } from "node:module";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 let _ts: typeof TS | null = null;
@@ -36,13 +36,14 @@ export interface SourceFile {
 
 /** Collect project TypeScript source files (bounded walk; skips heavy dirs and .d.ts). */
 export function collectSourceFiles(sourcePath: string, maxDepth = 12): SourceFile[] {
-  let base = resolve(sourcePath);
-  try {
-    if (statSync(base).isFile()) {
-      return TS_EXT.test(base) && !DECL_EXT.test(base) ? [{ path: base, text: readFileSync(base, "utf8") }] : [];
+  const base = resolve(sourcePath);
+  // Single-file target: read it directly (try-then-act avoids a stat→read race).
+  if (TS_EXT.test(base) && !DECL_EXT.test(base)) {
+    try {
+      return [{ path: base, text: readFileSync(base, "utf8") }];
+    } catch {
+      // not a readable file (a directory or missing) — fall through to the walk
     }
-  } catch {
-    return [];
   }
   const out: SourceFile[] = [];
   const walk = (dir: string, depth: number): void => {
