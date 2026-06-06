@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "description": "Read your service code; generate ready-to-import API collections for every testing tool (Postman, OpenAPI, Insomnia, Bruno, Hoppscotch, Thunder Client, .http) with exhaustive request variants.",
   "bin": {
-    "reqweave": "bin/cli.js"
+    "reqweave": "bin/cli.js",
+    "reqweave-mcp": "bin/mcp.js"
   },
   "files": [
     "bin/",
