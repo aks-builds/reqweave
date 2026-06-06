@@ -61,6 +61,15 @@ describe("other commands", () => {
   it("generate without a path exits 2", () => {
     expect(run(["generate"])).toBe(2);
   });
+
+  it("generate --openapi imports an OpenAPI doc end to end (B1)", () => {
+    const openapi = path.join(here, "fixtures", "openapi", "petstore.openapi.json");
+    const out = mkdtempSync(path.join(tmpdir(), "reqweave-oapi-"));
+    const code = run(["generate", ".", "--openapi", openapi, "--out", out, "--tools", "postman,openapi", "--generated-at", "2026-01-01T00:00:00Z"]);
+    expect(code).toBe(0);
+    expect(existsSync(path.join(out, "postman", "petstore.postman_collection.json"))).toBe(true);
+    expect(existsSync(path.join(out, "openapi", "petstore.openapi.json"))).toBe(true);
+  });
 });
 
 describe("config + init (A4)", () => {

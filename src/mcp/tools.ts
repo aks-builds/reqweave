@@ -22,12 +22,14 @@ export interface ToolDef {
 const sourceProps = {
   path: { type: "string", description: "Path to the service codebase (directory/.csproj/.sln)." },
   ir: { type: "string", description: "Path to an existing IR JSON; skips the analyzer." },
+  openapi: { type: "string", description: "Path to an OpenAPI 3.x doc; imported as IR (skips the analyzer)." },
   build: { type: "boolean", description: "Use build-mode analysis (requires the .NET SDK)." },
 };
 
 function irFrom(args: Record<string, unknown>) {
   return analyze((args.path as string) ?? ".", {
     irFile: args.ir as string | undefined,
+    openapiFile: args.openapi as string | undefined,
     build: Boolean(args.build),
     service: args.service as string | undefined,
     generatedAt: DEFAULT_GENERATED_AT,

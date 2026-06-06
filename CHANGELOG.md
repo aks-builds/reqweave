@@ -27,6 +27,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Project scaffold & CI**: stable aggregate `test` gate, CodeQL (security-extended),
   Dependabot, integration (real generate→import + determinism), auto-approve.
 
+- **OpenAPI import** (Bundle B): `--openapi <file>` (and MCP `openapi`) ingests any
+  OpenAPI 3.x document into the IR ($ref resolution, params, bodies, responses,
+  security→auth) → all 7 exporters. Foundation for build-mode; works for any
+  OpenAPI-producing backend regardless of language.
 - **Richer auth-scheme detection** (Bundle B): classify JWT/bearer, OAuth2/OIDC,
   API-key, and basic from `AddAuthentication` wiring and
   `[Authorize(AuthenticationSchemes=…)]`; the "assumed Bearer" diagnostic now
