@@ -49,6 +49,7 @@ export function exportCollections(req: ExportRequest): ExportedFile[] {
     options: {
       baseUrl: req.options?.baseUrl ?? DEFAULT_BASE_URL,
       generatedAt: req.options?.generatedAt ?? DEFAULT_GENERATED_AT,
+      tests: req.options?.tests ?? true,
     },
   };
 

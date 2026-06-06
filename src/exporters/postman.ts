@@ -1,5 +1,6 @@
 import type { Exporter, ExportContext, ExportedFile } from "./types.js";
 import type { RequestVariant } from "../variants/index.js";
+import { assertionsFor, type AssertionSet } from "./assertions.js";
 import {
   resolvePath,
   queryString,
@@ -11,7 +12,22 @@ import {
   usedVariables,
 } from "./util.js";
 
-function requestItem(v: RequestVariant): unknown {
+function testEvent(a: AssertionSet): unknown {
+  const exec = [`pm.test("status is ${a.status}", function () { pm.response.to.have.status(${a.status}); });`];
+  if (a.contentType) {
+    exec.push(
+      `pm.test("content-type is ${a.contentType}", function () { pm.expect(String(pm.response.headers.get("Content-Type") || "")).to.include("${a.contentType}"); });`,
+    );
+  }
+  if (a.jsonSchema) {
+    exec.push(
+      `pm.test("response matches schema", function () { pm.response.to.have.jsonSchema(${JSON.stringify(a.jsonSchema)}); });`,
+    );
+  }
+  return { listen: "test", script: { type: "text/javascript", exec } };
+}
+
+function requestItem(v: RequestVariant, assertions?: AssertionSet): unknown {
   const path = resolvePath(v.routeTemplate, v.pathParams).split("/").filter(Boolean);
   const url: Record<string, unknown> = {
     raw: `{{baseUrl}}${resolvePath(v.routeTemplate, v.pathParams)}${queryString(v.query)}`,
@@ -33,7 +49,11 @@ function requestItem(v: RequestVariant): unknown {
     request.body = { mode: "raw", raw: body, options: { raw: { language: "json" } } };
   }
 
-  return { name: v.name, request };
+  const item: Record<string, unknown> = { name: v.name, request };
+  if (assertions) {
+    item.event = [testEvent(assertions)];
+  }
+  return item;
 }
 
 export const postmanExporter: Exporter = {
@@ -48,7 +68,7 @@ export const postmanExporter: Exporter = {
       },
       item: groupByEndpoint(ctx.variants).map((g) => ({
         name: g.endpointId,
-        item: g.variants.map(requestItem),
+        item: g.variants.map((v) => requestItem(v, ctx.options.tests ? assertionsFor(ctx.ir, v) : undefined)),
       })),
       variable: [{ key: "baseUrl", value: ctx.options.baseUrl }],
     };

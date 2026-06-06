@@ -1,5 +1,6 @@
 import type { Exporter, ExportContext, ExportedFile } from "./types.js";
 import type { RequestVariant } from "../variants/index.js";
+import { assertionsFor, type AssertionSet } from "./assertions.js";
 import { resolvePath, queryString, bodyText, groupByEndpoint, slug, usedVariables } from "./util.js";
 
 function indentBlock(text: string): string {
@@ -9,7 +10,7 @@ function indentBlock(text: string): string {
     .join("\n");
 }
 
-function bru(v: RequestVariant, seq: number): string {
+function bru(v: RequestVariant, seq: number, assertions?: AssertionSet): string {
   const out: string[] = [];
   out.push("meta {", `  name: ${v.name}`, "  type: http", `  seq: ${seq}`, "}", "");
 
@@ -31,6 +32,12 @@ function bru(v: RequestVariant, seq: number): string {
   const body = bodyText(v);
   if (body !== undefined) {
     out.push("body:json {", indentBlock(body), "}", "");
+  }
+
+  if (assertions) {
+    out.push("assert {", `  res.status: eq ${assertions.status}`);
+    if (assertions.contentType) out.push(`  res.headers.content-type: contains ${assertions.contentType}`);
+    out.push("}", ""); // JSON-schema not expressible in Bruno assert -> fallback
   }
 
   return out.join("\n").trimEnd() + "\n";
@@ -55,7 +62,8 @@ export const brunoExporter: Exporter = {
         let n = 1;
         while (used.has(name)) name = `${slug(g.endpointId)}__${slug(v.name)}-${++n}`;
         used.add(name);
-        files.push({ path: `bruno/${name}.bru`, content: bru(v, ++seq) });
+        const assertions = ctx.options.tests ? assertionsFor(ctx.ir, v) : undefined;
+        files.push({ path: `bruno/${name}.bru`, content: bru(v, ++seq, assertions) });
       }
     }
 

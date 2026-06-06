@@ -79,6 +79,7 @@ export const TOOLS: ToolDef[] = [
         tools: { type: "array", items: { type: "string", enum: [...SUPPORTED_TOOLS] }, description: "Defaults to all." },
         depth: { type: "string", enum: [...DEPTH_LEVELS], description: "Variant breadth (default standard)." },
         baseUrl: { type: "string" },
+        tests: { type: "boolean", description: "Emit runnable test assertions (default true)." },
         outDir: { type: "string", description: "Write files here; omit to return contents inline." },
       },
     },
@@ -91,7 +92,11 @@ export const TOOLS: ToolDef[] = [
         ir,
         variants,
         tools,
-        options: { baseUrl: (args.baseUrl as string) ?? DEFAULT_BASE_URL, generatedAt: DEFAULT_GENERATED_AT },
+        options: {
+          baseUrl: (args.baseUrl as string) ?? DEFAULT_BASE_URL,
+          generatedAt: DEFAULT_GENERATED_AT,
+          tests: args.tests !== false,
+        },
       });
 
       const summary = { service: ir.service.name, endpoints: ir.endpoints.length, variants: variants.length, files: files.length, tools };

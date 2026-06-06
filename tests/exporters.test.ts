@@ -102,6 +102,34 @@ describe("thunder-client", () => {
   });
 });
 
+describe("test assertions (A1)", () => {
+  it("postman embeds status, content-type, and JSON-schema assertions", () => {
+    const blob = JSON.stringify(json(".postman_collection.json"));
+    expect(blob).toContain("pm.response.to.have.status");
+    expect(blob).toContain("pm.response.to.have.jsonSchema"); // getPetById 200 has a schema
+    expect(blob).toContain("pm.expect"); // content-type check
+  });
+
+  it("thunder emits res-code tests; bruno emits assert blocks; hoppscotch emits pw assertions", () => {
+    expect(find(".thunder-collection.json").content).toContain('"res-code"');
+    const bru = files.find((f) => f.path.endsWith(".bru") && !f.path.includes("environments"))!;
+    expect(bru.content).toContain("assert {");
+    expect(bru.content).toContain("res.status: eq");
+    expect(find(".hoppscotch-collection.json").content).toContain("pw.expect(pw.response.status)");
+  });
+
+  it("tests:false omits assertions", () => {
+    const noTests = exportCollections({
+      ir,
+      variants,
+      tools: [...SUPPORTED_TOOLS] as SupportedTool[],
+      options: { tests: false, generatedAt: "2026-01-01T00:00:00Z" },
+    });
+    const postman = noTests.find((f) => f.path.includes(".postman_collection.json"))!.content;
+    expect(postman).not.toContain("pm.response.to.have.status");
+  });
+});
+
 describe("http", () => {
   it("emits a .http file and an env with blank secrets", () => {
     const httpFile = files.find((f) => f.path.endsWith(".http"))!;
