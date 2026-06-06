@@ -141,6 +141,14 @@ public class ControllerAnalyzerTests
     }
 
     [Fact]
+    public void Post_without_produces_infers_201()
+    {
+        // Create declares no [ProducesResponseType] -> POST convention is 201.
+        var ep = Get(Analyze(), "POST", "/api/Pets");
+        Assert.Contains(201, ep.Responses.Select(r => r.Status));
+    }
+
+    [Fact]
     public void Output_is_deterministic()
     {
         Assert.Equal(IrJson.Serialize(Analyze()), IrJson.Serialize(Analyze()));

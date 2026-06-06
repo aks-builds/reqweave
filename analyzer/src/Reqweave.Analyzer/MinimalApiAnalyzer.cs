@@ -126,8 +126,15 @@ public sealed class MinimalApiAnalyzer
             ? new Auth(true, new[] { new AuthScheme("bearer", "header", "Authorization") })
             : new Auth(false, new[] { new AuthScheme("none") });
 
+        var status = verb switch
+        {
+            "POST" => 201,
+            "DELETE" => 204,
+            "PUT" or "PATCH" => body is null ? 204 : 200,
+            _ => 200,
+        };
         var id = $"{verb.ToLowerInvariant()}_{RouteUtil.Slug(route)}";
-        return new Endpoint(id, verb, route, parameters, new[] { new ApiResponse(200) }, auth, OperationId: id, RequestBody: body);
+        return new Endpoint(id, verb, route, parameters, new[] { new ApiResponse(status) }, auth, OperationId: id, RequestBody: body);
     }
 
     private static string? MemberName(InvocationExpressionSyntax inv) => inv.Expression switch
