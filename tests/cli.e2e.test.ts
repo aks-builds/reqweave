@@ -62,6 +62,19 @@ describe("other commands", () => {
     expect(run(["generate"])).toBe(2);
   });
 
+  it("generate --lang ts analyzes a NestJS project end to end (C1, no .NET)", () => {
+    const nestDir = path.join(here, "fixtures", "ts", "nestjs");
+    const out = mkdtempSync(path.join(tmpdir(), "reqweave-ts-"));
+    const code = run([
+      "generate", nestDir, "--lang", "ts", "--service", "petstore", "--out", out,
+      "--tools", "postman,openapi", "--generated-at", "2026-01-01T00:00:00Z",
+    ]);
+    expect(code).toBe(0);
+    const openapi = JSON.parse(readFileSync(path.join(out, "openapi", "petstore.openapi.json"), "utf8"));
+    expect(openapi.paths["/pets/{id}"].get).toBeDefined();
+    expect(openapi.paths["/pets"].post).toBeDefined();
+  });
+
   it("generate --openapi imports an OpenAPI doc end to end (B1)", () => {
     const openapi = path.join(here, "fixtures", "openapi", "petstore.openapi.json");
     const out = mkdtempSync(path.join(tmpdir(), "reqweave-oapi-"));

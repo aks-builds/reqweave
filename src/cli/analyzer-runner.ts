@@ -13,9 +13,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseIr, importOpenApi, reconcile, type Ir } from "../ir/index.js";
 import { resolvePrebuiltAnalyzer, prebuiltPackageName } from "./prebuilt.js";
+import { analyzeTypeScript } from "../analyzers/ts/index.js";
+
+export type Language = "auto" | "dotnet" | "ts";
 
 export interface AnalyzeOptions {
   build?: boolean;
+  /** Source language. "auto" (default) detects from the project files. */
+  language?: Language;
   service?: string;
   generatedAt?: string;
   /** Read IR directly from this file instead of running the analyzer. */
@@ -79,8 +84,13 @@ export function analyze(sourcePath: string, opts: AnalyzeOptions = {}): Ir {
   return staticIr;
 }
 
-/** Run the syntax-based .NET analyzer (no compilation). */
+/** Run the static analyzer for the resolved language (no compilation). */
 function runStaticAnalyzer(sourcePath: string, opts: AnalyzeOptions): Ir {
+  const language = resolveLanguage(sourcePath, opts.language ?? "auto");
+  if (language === "ts") {
+    return analyzeTypeScript(sourcePath, { service: opts.service, generatedAt: opts.generatedAt });
+  }
+
   const outFile = join(mkdtempSync(join(tmpdir(), "reqweave-")), "ir.json");
   const args = [sourcePath, "--out", outFile];
   if (opts.service) args.push("--service", opts.service);
@@ -123,6 +133,28 @@ function runStaticAnalyzer(sourcePath: string, opts: AnalyzeOptions): Ir {
 function hasDotnet(): boolean {
   const r = spawnSync("dotnet", ["--version"], { encoding: "utf8" });
   return !r.error && r.status === 0;
+}
+
+/** Resolve the source language: honor an explicit choice, else detect from files. */
+function resolveLanguage(sourcePath: string, requested: Language): Language {
+  if (requested !== "auto") return requested;
+  const base = resolve(sourcePath);
+  // Try to list it as a directory; if that fails it's a file (or missing), so
+  // decide by extension. (try-then-act avoids a stat→read race.)
+  let entries: string[] | null = null;
+  try {
+    entries = readdirSync(base).map((e) => e.toLowerCase());
+  } catch {
+    entries = null;
+  }
+  if (entries === null) {
+    return /\.(ts|tsx|mts|cts)$/i.test(base) ? "ts" : "dotnet";
+  }
+  if (entries.some((e) => e.endsWith(".csproj") || e.endsWith(".sln"))) return "dotnet";
+  if (entries.includes("package.json") || entries.includes("tsconfig.json") || entries.some((e) => /\.(ts|tsx)$/.test(e))) {
+    return "ts";
+  }
+  return "dotnet";
 }
 
 const OPENAPI_NAME = /^(openapi|swagger)\.json$/i;

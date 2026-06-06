@@ -12,8 +12,10 @@ No more hand-building API requests, and no more collections drifting from code.
 **One source in → importable collections for every tool out.**
 
 > [!NOTE]
-> **Status: M1 (ASP.NET Core REST) is functional.** Build-mode fidelity and
-> minimal-API/gRPC/other-language analyzers are on the roadmap. See the
+> **Status: functional for ASP.NET Core (REST + minimal APIs) and Node/TypeScript
+> (NestJS + Express).** Build-mode reconciliation, OpenAPI import, and prebuilt
+> SDK-free analyzer binaries are in. Python/Java/Go analyzers are next on the
+> roadmap. See the
 > [design spec](docs/superpowers/specs/2026-06-06-reqweave-design.md) and
 > [implementation plan](docs/superpowers/plans/2026-06-06-reqweave-implementation-plan.md).
 
@@ -40,7 +42,7 @@ Then import the generated files into your tool and start hitting the API.
 
 | Command | Purpose |
 |---|---|
-| `reqweave generate <path>` | Generate collections. Flags: `--out`, `--tools all\|a,b`, `--depth minimal\|standard\|exhaustive`, `--base-url`, `--service`, `--build`, `--build-openapi FILE`, `--openapi FILE`, `--strict`, `--ir FILE`. |
+| `reqweave generate <path>` | Generate collections. Flags: `--lang auto\|dotnet\|ts`, `--out`, `--tools all\|a,b`, `--depth minimal\|standard\|exhaustive`, `--base-url`, `--service`, `--build`, `--build-openapi FILE`, `--openapi FILE`, `--strict`, `--ir FILE`. |
 | `reqweave list-endpoints <path>` | List discovered endpoints. |
 | `reqweave inspect <path> <id>` | Show the variants for one endpoint (with provenance). |
 
@@ -62,6 +64,7 @@ Then import the generated files into your tool and start hitting the API.
   - `REQWEAVE_ANALYZER` — an explicit analyzer binary/dll you point at.
   - **Prebuilt, per-OS package** `@reqweave/analyzer-<platform>-<arch>` — a self-contained native binary installed automatically (as an optional dependency, os/cpu-gated) and **checksum-verified before it runs**. No .NET SDK needed.
   - The **.NET SDK** (`dotnet run` the analyzer) — the dev/source fallback.
+- For analyzing **Node/TypeScript source** (NestJS/Express): nothing extra — analysis runs **in-process** via the bundled `typescript` parser. No SDK, no code execution.
 
 ## Design principles
 - **No code execution by default** — static read; `--build` is opt-in.

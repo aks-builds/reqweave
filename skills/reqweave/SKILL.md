@@ -15,7 +15,7 @@ unauthorized). No hand-building requests; no drift from the code.
 - "Make a Postman collection for this API / service."
 - "Generate an OpenAPI spec from these controllers."
 - "I want to test/exercise all the endpoints" (Insomnia, Bruno, Hoppscotch, Thunder Client, `.http`).
-- Turn an ASP.NET Core (.NET) REST codebase into importable API requests.
+- Turn an ASP.NET Core (.NET) or Node/TypeScript (NestJS/Express) REST codebase into importable API requests.
 
 ## Core principles (do not violate)
 1. **Never fabricate endpoints or values.** reqweave reads the real source; if a type can't be resolved it emits a diagnostic, not a guess.
