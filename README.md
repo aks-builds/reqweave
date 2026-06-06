@@ -40,7 +40,7 @@ Then import the generated files into your tool and start hitting the API.
 
 | Command | Purpose |
 |---|---|
-| `reqweave generate <path>` | Generate collections. Flags: `--out`, `--tools all\|a,b`, `--depth minimal\|standard\|exhaustive`, `--base-url`, `--service`, `--build`, `--strict`, `--ir FILE`. |
+| `reqweave generate <path>` | Generate collections. Flags: `--out`, `--tools all\|a,b`, `--depth minimal\|standard\|exhaustive`, `--base-url`, `--service`, `--build`, `--build-openapi FILE`, `--openapi FILE`, `--strict`, `--ir FILE`. |
 | `reqweave list-endpoints <path>` | List discovered endpoints. |
 | `reqweave inspect <path> <id>` | Show the variants for one endpoint (with provenance). |
 

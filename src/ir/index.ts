@@ -6,6 +6,7 @@ import { irSchema, IR_VERSION, type Ir } from "./schema.js";
 
 export * from "./schema.js";
 export { importOpenApi, type ImportOptions } from "./openapi-import.js";
+export { reconcile } from "./reconcile.js";
 
 export type ValidateResult =
   | { success: true; data: Ir }

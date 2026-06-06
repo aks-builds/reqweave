@@ -23,13 +23,15 @@ const sourceProps = {
   path: { type: "string", description: "Path to the service codebase (directory/.csproj/.sln)." },
   ir: { type: "string", description: "Path to an existing IR JSON; skips the analyzer." },
   openapi: { type: "string", description: "Path to an OpenAPI 3.x doc; imported as IR (skips the analyzer)." },
-  build: { type: "boolean", description: "Use build-mode analysis (requires the .NET SDK)." },
+  build: { type: "boolean", description: "Build-mode: reconcile static analysis with a build-produced OpenAPI (auto-found in the project tree)." },
+  buildOpenapi: { type: "string", description: "Build-mode ground truth: reconcile static analysis with this build-produced OpenAPI doc." },
 };
 
 function irFrom(args: Record<string, unknown>) {
   return analyze((args.path as string) ?? ".", {
     irFile: args.ir as string | undefined,
     openapiFile: args.openapi as string | undefined,
+    buildOpenapiFile: args.buildOpenapi as string | undefined,
     build: Boolean(args.build),
     service: args.service as string | undefined,
     generatedAt: DEFAULT_GENERATED_AT,
