@@ -21,7 +21,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ir:schema": "npm run build && node dist/ir/emit-schema.js"
+    "ir:schema": "npm run build && node dist/ir/emit-schema.js",
+    "prepare": "npm run build"
   },
   "keywords": [
     "api",
