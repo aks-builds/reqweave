@@ -75,6 +75,19 @@ describe("other commands", () => {
     expect(openapi.paths["/pets"].post).toBeDefined();
   });
 
+  it("generate --lang py analyzes a FastAPI project end to end (C2, no Python)", () => {
+    const pyDir = path.join(here, "fixtures", "py", "fastapi");
+    const out = mkdtempSync(path.join(tmpdir(), "reqweave-py-"));
+    const code = run([
+      "generate", pyDir, "--lang", "py", "--service", "petstore", "--out", out,
+      "--tools", "openapi", "--generated-at", "2026-01-01T00:00:00Z",
+    ]);
+    expect(code).toBe(0);
+    const openapi = JSON.parse(readFileSync(path.join(out, "openapi", "petstore.openapi.json"), "utf8"));
+    expect(openapi.paths["/pets/{pet_id}"].get).toBeDefined();
+    expect(openapi.paths["/pets"].post).toBeDefined();
+  });
+
   it("generate --openapi imports an OpenAPI doc end to end (B1)", () => {
     const openapi = path.join(here, "fixtures", "openapi", "petstore.openapi.json");
     const out = mkdtempSync(path.join(tmpdir(), "reqweave-oapi-"));
