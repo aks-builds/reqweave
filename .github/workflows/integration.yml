@@ -1,8 +1,9 @@
 name: integration
 
-# End-to-end smoke: the built CLI and the analyzer actually execute. This grows
-# into a real "generate -> import" pipeline check (fixture ASP.NET API -> reqweave
-# -> Newman import) in Phase 9. For now it proves both runtimes run.
+# Real end-to-end: a fixture ASP.NET Core API -> the .NET analyzer -> reqweave
+# CLI -> importable collections for all tools, validated structurally. Also
+# proves byte-stable (deterministic) output across runs. This is the only job
+# that exercises the real analyzer (dotnet) + CLI together.
 
 on:
   push:
@@ -17,6 +18,8 @@ jobs:
   e2e:
     name: e2e
     runs-on: ubuntu-latest
+    env:
+      FIXTURE: tests/fixtures/dotnet/PetApi
     steps:
       - uses: actions/checkout@v6
 
@@ -27,14 +30,23 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: CLI runs
-        run: |
-          set -euo pipefail
-          node bin/cli.js --version
-          node bin/cli.js --help | grep -q "generate"
-
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - name: Analyzer runs
-        run: dotnet run --project analyzer/src/Reqweave.Analyzer/Reqweave.Analyzer.csproj -- --version
+
+      - name: Generate collections from the fixture API (real analyzer)
+        run: |
+          node bin/cli.js generate "$FIXTURE" --out out --tools all --depth standard \
+            --service PetApi --generated-at 2026-01-01T00:00:00Z
+
+      - name: Validate all tool outputs
+        run: node tests/integration/validate-outputs.mjs out
+
+      - name: Output is deterministic (byte-stable across runs)
+        run: |
+          node bin/cli.js generate "$FIXTURE" --out out2 --tools all --depth standard \
+            --service PetApi --generated-at 2026-01-01T00:00:00Z
+          if ! diff -r out out2 >/dev/null; then
+            echo "::error::reqweave output is not deterministic"; diff -r out out2 || true; exit 1
+          fi
+          echo "deterministic: out == out2"
