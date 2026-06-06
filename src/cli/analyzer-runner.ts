@@ -12,6 +12,7 @@ import { mkdtempSync, readFileSync, readdirSync, existsSync, statSync } from "no
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseIr, importOpenApi, reconcile, type Ir } from "../ir/index.js";
+import { resolvePrebuiltAnalyzer, prebuiltPackageName } from "./prebuilt.js";
 
 export interface AnalyzeOptions {
   build?: boolean;
@@ -86,10 +87,14 @@ function runStaticAnalyzer(sourcePath: string, opts: AnalyzeOptions): Ir {
   if (opts.generatedAt) args.push("--generated-at", opts.generatedAt);
 
   const custom = process.env.REQWEAVE_ANALYZER;
+  const prebuilt = custom ? null : resolvePrebuiltAnalyzer();
   let result;
   if (custom) {
     const isDll = custom.toLowerCase().endsWith(".dll");
     result = spawnSync(isDll ? "dotnet" : custom, isDll ? [custom, ...args] : args, { encoding: "utf8" });
+  } else if (prebuilt) {
+    // Self-contained, checksum-verified native binary — no .NET SDK required.
+    result = spawnSync(prebuilt, args, { encoding: "utf8" });
   } else if (existsSync(ANALYZER_CSPROJ) && hasDotnet()) {
     result = spawnSync(
       "dotnet",
@@ -98,7 +103,8 @@ function runStaticAnalyzer(sourcePath: string, opts: AnalyzeOptions): Ir {
     );
   } else {
     throw new Error(
-      "reqweave analyzer not found. Install the .NET SDK, set REQWEAVE_ANALYZER to the analyzer binary, or pass --ir <file>.",
+      "reqweave analyzer not found. Install the .NET SDK, install the prebuilt " +
+        `analyzer package (${prebuiltPackageName()}), set REQWEAVE_ANALYZER, or pass --ir <file>.`,
     );
   }
 
