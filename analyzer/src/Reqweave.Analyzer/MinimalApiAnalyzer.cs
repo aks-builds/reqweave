@@ -30,12 +30,14 @@ public sealed class MinimalApiAnalyzer
 
     private readonly SourceIndex _index;
     private readonly SchemaMapper _mapper;
+    private readonly AuthSchemeDetector _auth;
     private readonly List<Diagnostic> _diagnostics = new();
 
     public MinimalApiAnalyzer(SourceIndex index)
     {
         _index = index;
         _mapper = new SchemaMapper(index, _diagnostics);
+        _auth = new AuthSchemeDetector(index);
     }
 
     public (IReadOnlyList<Endpoint> Endpoints, IReadOnlyList<Diagnostic> Diagnostics) Analyze()
@@ -113,18 +115,24 @@ public sealed class MinimalApiAnalyzer
             parameters.Add(new Param(paramName, binding, binding == "route" || (!nullable && p.Default is null), schema));
         }
 
-        var authorized = RequiresAuthorization(inv);
-        if (authorized)
+        Auth auth;
+        if (RequiresAuthorization(inv))
         {
-            _diagnostics.Add(new Diagnostic(
-                "assumedConvention",
-                $"Assumed Bearer auth for minimal API '{verb} {route}' (RequireAuthorization); confirm the scheme.",
-                "info"));
-        }
+            var (schemes, confident) = _auth.Resolve(null);
+            if (!confident)
+            {
+                _diagnostics.Add(new Diagnostic(
+                    "assumedConvention",
+                    $"Assumed Bearer auth for minimal API '{verb} {route}' (RequireAuthorization); no auth scheme configuration detected.",
+                    "info"));
+            }
 
-        var auth = authorized
-            ? new Auth(true, new[] { new AuthScheme("bearer", "header", "Authorization") })
-            : new Auth(false, new[] { new AuthScheme("none") });
+            auth = new Auth(true, schemes);
+        }
+        else
+        {
+            auth = new Auth(false, new[] { new AuthScheme("none") });
+        }
 
         var status = verb switch
         {

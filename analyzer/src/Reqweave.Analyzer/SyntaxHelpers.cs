@@ -83,6 +83,28 @@ public static class SyntaxHelpers
         return null;
     }
 
+    /// <summary>The string value of a named argument (e.g. AuthenticationSchemes = "Bearer").</summary>
+    public static string? NamedStringArg(AttributeSyntax attr, string name)
+    {
+        var args = attr.ArgumentList?.Arguments;
+        if (args is null)
+        {
+            return null;
+        }
+
+        foreach (var arg in args.Value)
+        {
+            if (arg.NameEquals?.Name.Identifier.Text == name
+                && arg.Expression is LiteralExpressionSyntax lit
+                && lit.Token.Value is string s)
+            {
+                return s;
+            }
+        }
+
+        return null;
+    }
+
     public static bool IsPublic(MemberDeclarationSyntax member) =>
         member.Modifiers.Any(m => m.Text == "public");
 

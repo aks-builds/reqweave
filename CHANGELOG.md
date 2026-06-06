@@ -27,6 +27,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Project scaffold & CI**: stable aggregate `test` gate, CodeQL (security-extended),
   Dependabot, integration (real generate→import + determinism), auto-approve.
 
+- **Richer auth-scheme detection** (Bundle B): classify JWT/bearer, OAuth2/OIDC,
+  API-key, and basic from `AddAuthentication` wiring and
+  `[Authorize(AuthenticationSchemes=…)]`; the "assumed Bearer" diagnostic now
+  fires only on a true fallback (no config detected).
 - **`reqweave install`** (Bundle A): agent-agnostic skill installer (Claude,
   Cursor, Codex, OpenCode, Gemini, Windsurf); `--only`/`--skip`/`--force`/`--dry-run`.
 - **Project config + `reqweave init`** (Bundle A): optional `reqweave.config.json`
