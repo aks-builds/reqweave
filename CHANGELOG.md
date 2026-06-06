@@ -11,7 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **.NET static analyzer** (Roslyn, no build): ASP.NET Core attribute-routed
   controllers **and minimal APIs** (`app.MapGet/Post/Put/Delete/Patch`) → IR —
   routes, param binding, DTO→JSON-Schema with validation attributes/enums/
-  collections, responses, auth (incl. `RequireAuthorization`), diagnostics.
+  collections/**base-class inheritance**/**record positional params**, responses,
+  auth (incl. `RequireAuthorization`), diagnostics.
 - **Variant engine**: depth tiers (`minimal`/`standard`/`exhaustive`), pairwise
   coverage, boundary/invalid/auth/per-status variants, deterministic, capped.
 - **7 native exporters**: Postman v2.1, OpenAPI 3.1, Insomnia, Bruno, Hoppscotch,
