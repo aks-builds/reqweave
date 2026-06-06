@@ -100,7 +100,10 @@ public static class Program
     public static Ir Analyze(string path, string? service, string? generatedAt)
     {
         var index = SourceIndex.Load(path);
-        var (endpoints, diagnostics) = new ControllerAnalyzer(index).Analyze();
+        var (controllerEps, controllerDiag) = new ControllerAnalyzer(index).Analyze();
+        var (minimalEps, minimalDiag) = new MinimalApiAnalyzer(index).Analyze();
+        var endpoints = Merge(controllerEps, minimalEps);
+        var diagnostics = controllerDiag.Concat(minimalDiag).ToList();
         var serviceName = service ?? DeriveServiceName(path);
         var meta = new Meta(
             AnalyzerInfo.IrVersion,
@@ -113,6 +116,36 @@ public static class Program
             endpoints,
             diagnostics,
             meta);
+    }
+
+    // Combine controller + minimal-API endpoints: stable ordering and unique ids.
+    private static IReadOnlyList<Endpoint> Merge(IReadOnlyList<Endpoint> a, IReadOnlyList<Endpoint> b)
+    {
+        var all = a.Concat(b).ToList();
+        all.Sort((x, y) =>
+        {
+            var r = string.CompareOrdinal(x.RouteTemplate, y.RouteTemplate);
+            return r != 0 ? r : string.CompareOrdinal(x.Method, y.Method);
+        });
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < all.Count; i++)
+        {
+            var id = all[i].Id;
+            var unique = id;
+            var n = 1;
+            while (!seen.Add(unique))
+            {
+                unique = $"{id}-{++n}";
+            }
+
+            if (unique != id)
+            {
+                all[i] = all[i] with { Id = unique };
+            }
+        }
+
+        return all;
     }
 
     private static string? NextArg(string[] args, ref int i) => i + 1 < args.Length ? args[++i] : null;
