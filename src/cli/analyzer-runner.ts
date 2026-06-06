@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { parseIr, type Ir } from "../ir/index.js";
+import { parseIr, importOpenApi, type Ir } from "../ir/index.js";
 
 export interface AnalyzeOptions {
   build?: boolean;
@@ -19,6 +19,8 @@ export interface AnalyzeOptions {
   generatedAt?: string;
   /** Read IR directly from this file instead of running the analyzer. */
   irFile?: string;
+  /** Import an OpenAPI document instead of running the analyzer. */
+  openapiFile?: string;
 }
 
 const REPO_ROOT = resolve(__dirname, "..", "..");
@@ -27,6 +29,13 @@ const ANALYZER_CSPROJ = join(REPO_ROOT, "analyzer", "src", "Reqweave.Analyzer", 
 export function analyze(sourcePath: string, opts: AnalyzeOptions = {}): Ir {
   if (opts.irFile) {
     return parseIr(readFileSync(opts.irFile, "utf8"));
+  }
+
+  if (opts.openapiFile) {
+    return importOpenApi(JSON.parse(readFileSync(opts.openapiFile, "utf8")), {
+      serviceName: opts.service,
+      generatedAt: opts.generatedAt,
+    });
   }
 
   const outFile = join(mkdtempSync(join(tmpdir(), "reqweave-")), "ir.json");
