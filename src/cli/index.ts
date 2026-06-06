@@ -2,7 +2,7 @@
  * reqweave CLI. Chains analyzer -> variant engine -> exporters.
  * Synchronous (the analyzer runs via spawnSync); returns a process exit code.
  */
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { generateAll, generateVariants } from "../variants/index.js";
 import { exportCollections } from "../exporters/index.js";
@@ -194,12 +194,17 @@ function cmdInit(args: string[]): number {
   const f = parseFlags(args, new Set(["force"]));
   const dir = resolve(f.positionals[0] ?? ".");
   const dest = join(dir, CONFIG_FILENAME);
-  if (existsSync(dest) && !f.bools.has("force")) {
-    process.stderr.write(`reqweave: ${CONFIG_FILENAME} already exists (use --force to overwrite).\n`);
-    return 1;
-  }
   mkdirSync(dir, { recursive: true });
-  writeFileSync(dest, configTemplate());
+  try {
+    // Atomic: "wx" fails if the file exists — avoids a check-then-write race.
+    writeFileSync(dest, configTemplate(), f.bools.has("force") ? {} : { flag: "wx" });
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "EEXIST") {
+      process.stderr.write(`reqweave: ${CONFIG_FILENAME} already exists (use --force to overwrite).\n`);
+      return 1;
+    }
+    throw e;
+  }
   process.stdout.write(`reqweave: wrote ${dest}\n`);
   return 0;
 }
