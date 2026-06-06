@@ -265,17 +265,28 @@ function cmdInstall(args: string[]): number {
     any = true;
     mkdirSync(dirname(a.dest), { recursive: true });
     if (a.kind === "dir") {
-      if (existsSync(a.dest) && !f.bools.has("force")) {
-        process.stdout.write(`  ${name.padEnd(9)} exists (use --force)\n`);
-        continue;
+      try {
+        // Let cpSync decide atomically: error if any dest file exists (no force).
+        cpSync(skillDir, a.dest, { recursive: true, force: f.bools.has("force"), errorOnExist: !f.bools.has("force") });
+        process.stdout.write(`  ${name.padEnd(9)} installed -> ${a.dest}\n`);
+      } catch (e) {
+        const code = (e as NodeJS.ErrnoException).code;
+        if (code === "ERR_FS_CP_EEXIST" || code === "EEXIST") {
+          process.stdout.write(`  ${name.padEnd(9)} exists (use --force)\n`);
+        } else {
+          throw e;
+        }
       }
-      cpSync(skillDir, a.dest, { recursive: true });
-      process.stdout.write(`  ${name.padEnd(9)} installed -> ${a.dest}\n`);
     } else if (a.kind === "file") {
       copyFileSync(join(skillDir, "SKILL.md"), a.dest);
       process.stdout.write(`  ${name.padEnd(9)} installed -> ${a.dest}\n`);
     } else {
-      const current = existsSync(a.dest) ? readFileSync(a.dest, "utf8") : "";
+      let current = "";
+      try {
+        current = readFileSync(a.dest, "utf8"); // read-or-empty; no check-then-act
+      } catch {
+        current = "";
+      }
       if (current.includes(marker)) {
         process.stdout.write(`  ${name.padEnd(9)} already referenced\n`);
         continue;
