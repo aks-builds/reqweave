@@ -35,7 +35,6 @@ public sealed class ControllerAnalyzer
         "CancellationToken", "HttpContext", "HttpRequest", "HttpResponse", "ClaimsPrincipal",
     };
 
-    private static readonly Regex RouteToken = new(@"\{([A-Za-z_][A-Za-z0-9_]*)", RegexOptions.Compiled);
     private static readonly Regex StatusMember = new(@"Status(\d{3})", RegexOptions.Compiled);
 
     private readonly SourceIndex _index;
@@ -122,7 +121,7 @@ public sealed class ControllerAnalyzer
 
                 var methodRoute = StringArg(attr)
                     ?? (FindAttr(method.AttributeLists, "Route") is { } r ? StringArg(r) : null);
-                var route = NormalizeRoute(Combine(classRoute, methodRoute, method.Identifier.Text));
+                var route = RouteUtil.Normalize(Combine(classRoute, methodRoute, method.Identifier.Text));
                 yield return BuildEndpoint(cls, method, controllerName, verb, route, classAuthorize);
             }
         }
@@ -137,7 +136,7 @@ public sealed class ControllerAnalyzer
         bool classAuthorize)
     {
         var id = $"{controllerName}.{method.Identifier.Text}";
-        var tokens = RouteTokens(route);
+        var tokens = RouteUtil.Tokens(route);
 
         var parameters = new List<Param>();
         RequestBody? body = null;
@@ -344,24 +343,6 @@ public sealed class ControllerAnalyzer
             .Select(p => p.Trim('/'))
             .Where(p => p.Length > 0);
         return "/" + string.Join("/", parts);
-    }
-
-    private static string NormalizeRoute(string route)
-    {
-        // "{id:int}" / "{id?}" / "{*rest}" -> "{id}"
-        route = Regex.Replace(route, @"\{\*?([A-Za-z_][A-Za-z0-9_]*)(?::[^}]+)?\??\}", "{$1}");
-        return route.Length == 0 ? "/" : route;
-    }
-
-    private static HashSet<string> RouteTokens(string route)
-    {
-        var set = new HashSet<string>(StringComparer.Ordinal);
-        foreach (Match m in RouteToken.Matches(route))
-        {
-            set.Add(m.Groups[1].Value);
-        }
-
-        return set;
     }
 
     private static string LastTypeName(TypeSyntax type) => type switch
