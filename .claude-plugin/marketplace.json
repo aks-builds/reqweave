@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "reqweave",
+  "owner": {
+    "name": "aks-builds",
+    "url": "https://github.com/aks-builds"
+  },
+  "metadata": {
+    "description": "Code in, importable API collections out — for every API testing tool. By aks-builds.",
+    "version": "0.0.0"
+  },
+  "plugins": [
+    {
+      "name": "reqweave",
+      "source": "./",
+      "description": "Statically read a service codebase (ASP.NET Core REST today) and generate ready-to-import collections for Postman, OpenAPI, Insomnia, Bruno, Hoppscotch, Thunder Client, and .http — with exhaustive request variants per endpoint (happy path, boundaries, invalid input, per-status, auth). Deterministic, secret-safe, no network.",
+      "version": "0.0.0",
+      "license": "MIT",
+      "keywords": [
+        "api",
+        "postman",
+        "openapi",
+        "insomnia",
+        "bruno",
+        "hoppscotch",
+        "thunder-client",
+        "code-to-collection"
+      ]
+    }
+  ]
+}

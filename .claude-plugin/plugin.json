@@ -1,0 +1,26 @@
+{
+  "name": "reqweave",
+  "version": "0.0.0",
+  "description": "Read your service code and generate ready-to-import API test collections for every tool (Postman, OpenAPI, Insomnia, Bruno, Hoppscotch, Thunder Client, .http) with exhaustive request variants per endpoint.",
+  "author": {
+    "name": "aks-builds",
+    "url": "https://github.com/aks-builds"
+  },
+  "homepage": "https://github.com/aks-builds/reqweave",
+  "repository": "https://github.com/aks-builds/reqweave",
+  "license": "MIT",
+  "keywords": [
+    "api",
+    "postman",
+    "openapi",
+    "insomnia",
+    "bruno",
+    "hoppscotch",
+    "thunder-client",
+    "http-client",
+    "dotnet",
+    "api-testing",
+    "code-to-collection",
+    "developer-tools"
+  ]
+}
