@@ -66,6 +66,15 @@ describe("openapi", () => {
     expect(doc.paths["/pets/{id}"].get).toBeDefined();
     expect(doc.components.securitySchemes.bearerAuth.scheme).toBe("bearer");
   });
+
+  it("embeds request + response examples (A2)", () => {
+    const doc = json(".openapi.json");
+    const createPet = doc.paths["/pets"].post;
+    expect(createPet.requestBody.content["application/json"].example).toBeDefined();
+    const get200 = doc.paths["/pets/{id}"].get.responses["200"].content["application/json"];
+    expect(get200.example).toBeDefined();
+    expect(get200.example.id).toBeDefined();
+  });
 });
 
 describe("insomnia", () => {
