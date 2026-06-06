@@ -7,6 +7,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Java analyzer** (Bundle C): a fourth source language (Spring Boot) via a
+  dependency-free, synchronous brace-aware reader (no parser/JVM). Extracts
+  `@RestController`/`@Controller` + `@RequestMapping` base paths, `@GetMapping`/…
+  methods (and `@RequestMapping(method=)`), `@PathVariable`/`@RequestParam`/
+  `@RequestHeader`/`@RequestBody` params, return-type responses (unwrapping
+  `ResponseEntity`/`Optional`/`List`/`Flux`…), `@ResponseStatus`, and
+  `@PreAuthorize`/`@Secured`/`@RolesAllowed` auth. POJO/record DTOs + Enums and
+  Bean-Validation `@NotNull` (→ required) resolved cross-file. `--lang java`
+  (auto-detected from `pom.xml`/`build.gradle`/`.java`). Shares a small C-like
+  lexer with the Go reader.
 - **Python analyzer** (Bundle C): a third source language via a dependency-free,
   fully **synchronous** pattern-based reader (string/comment-aware logical-line
   builder — no parser/runtime needed). Extracts **FastAPI**
