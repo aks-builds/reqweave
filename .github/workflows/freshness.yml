@@ -1,9 +1,10 @@
 name: freshness
 
-# Drift guards that aren't about pass/fail tests:
-#   1. The IR version string stays in sync between the TS core and the .NET
-#      analyzer (they speak the same contract).
-#   2. package-lock.json is in sync with package.json.
+# Drift guard: the IR version string stays in sync between the TS core and the
+# .NET analyzer (they speak the same contract). Lockfile<->package.json sync is
+# already enforced by `npm ci` in CI, so it's not re-checked here (regenerating
+# the lockfile cross-platform churns optional-dep libc/os fields and gives false
+# failures).
 
 on:
   push:
@@ -22,9 +23,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "20"
 
       - name: IR version parity (TS core vs .NET analyzer)
         run: |
@@ -34,14 +32,5 @@ jobs:
           echo "TS=$TS  .NET=$NET"
           if [ -z "$TS" ] || [ "$TS" != "$NET" ]; then
             echo "::error::IR version mismatch between TS ($TS) and .NET ($NET)"
-            exit 1
-          fi
-
-      - name: Lockfile is in sync with package.json
-        run: |
-          set -euo pipefail
-          npm install --package-lock-only --no-audit --no-fund
-          if ! git diff --exit-code package-lock.json; then
-            echo "::error::package-lock.json is stale — run 'npm install' and commit the result"
             exit 1
           fi
