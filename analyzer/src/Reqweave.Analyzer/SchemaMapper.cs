@@ -176,6 +176,9 @@ public sealed class SchemaMapper
             properties[jsonName] = schema;
         }
 
+        AddRecordParams(decl, properties, visiting, depth);
+        MergeBaseProperties(decl, properties, required, visiting, depth);
+
         visiting.Remove(name);
 
         var obj = new JsonObject { ["type"] = "object", ["properties"] = properties };
@@ -186,6 +189,84 @@ public sealed class SchemaMapper
 
         return obj;
     }
+
+    // Record primary-constructor parameters are serialized properties too.
+    private void AddRecordParams(TypeDeclarationSyntax decl, JsonObject properties, HashSet<string> visiting, int depth)
+    {
+        if (decl is not RecordDeclarationSyntax rec || rec.ParameterList is null)
+        {
+            return;
+        }
+
+        foreach (var p in rec.ParameterList.Parameters)
+        {
+            if (p.Type is null)
+            {
+                continue;
+            }
+
+            var jsonName = CamelCase(p.Identifier.Text);
+            if (!properties.ContainsKey(jsonName))
+            {
+                properties[jsonName] = Map(p.Type, visiting, depth + 1);
+            }
+        }
+    }
+
+    // Merge inherited properties from base classes (declared/derived members win).
+    private void MergeBaseProperties(
+        TypeDeclarationSyntax decl,
+        JsonObject properties,
+        JsonArray required,
+        HashSet<string> visiting,
+        int depth)
+    {
+        if (decl.BaseList is null)
+        {
+            return;
+        }
+
+        foreach (var baseType in decl.BaseList.Types)
+        {
+            var baseName = BaseName(baseType.Type);
+            if (visiting.Contains(baseName) || _index.FindType(baseName) is not { } baseDecl)
+            {
+                continue;
+            }
+
+            var baseObj = MapType(baseDecl, visiting, depth + 1);
+            if (baseObj["properties"] is JsonObject baseProps)
+            {
+                foreach (var kv in baseProps)
+                {
+                    if (!properties.ContainsKey(kv.Key))
+                    {
+                        properties[kv.Key] = kv.Value?.DeepClone();
+                    }
+                }
+            }
+
+            if (baseObj["required"] is JsonArray baseReq)
+            {
+                foreach (var r in baseReq)
+                {
+                    var rv = r?.GetValue<string>();
+                    if (rv is not null && !required.Any((x) => x?.GetValue<string>() == rv))
+                    {
+                        required.Add(rv);
+                    }
+                }
+            }
+        }
+    }
+
+    private static string BaseName(TypeSyntax t) => t switch
+    {
+        IdentifierNameSyntax id => id.Identifier.Text,
+        GenericNameSyntax g => g.Identifier.Text,
+        QualifiedNameSyntax q => q.Right.Identifier.Text,
+        _ => t.ToString(),
+    };
 
     private static string JsonName(PropertyDeclarationSyntax prop)
     {
