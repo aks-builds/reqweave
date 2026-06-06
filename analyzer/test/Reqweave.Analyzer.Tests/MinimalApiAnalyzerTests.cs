@@ -71,6 +71,12 @@ public class MinimalApiAnalyzerTests
     }
 
     [Fact]
+    public void Post_infers_201_by_convention()
+    {
+        Assert.Equal(201, Get(Analyze(), "POST", "/todos").Responses.Single().Status);
+    }
+
+    [Fact]
     public void Complex_param_on_post_becomes_request_body()
     {
         var ep = Get(Analyze(), "POST", "/todos");

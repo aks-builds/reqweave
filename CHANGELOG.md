@@ -11,7 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **.NET static analyzer** (Roslyn, no build): ASP.NET Core attribute-routed
   controllers **and minimal APIs** (`app.MapGet/Post/Put/Delete/Patch`) → IR —
   routes, param binding, DTO→JSON-Schema with validation attributes/enums/
-  collections/**base-class inheritance**/**record positional params**, responses,
+  collections/**base-class inheritance**/**record positional params**, responses
+  (incl. HTTP-convention status inference when undeclared — POST→201, DELETE→204),
   auth (incl. `RequireAuthorization`), diagnostics.
 - **Variant engine**: depth tiers (`minimal`/`standard`/`exhaustive`), pairwise
   coverage, boundary/invalid/auth/per-status variants, request-body enum and

@@ -169,7 +169,7 @@ public sealed class ControllerAnalyzer
             parameters.Add(new Param(paramName, binding, required, schema));
         }
 
-        var responses = Responses(method);
+        var responses = Responses(method, verb);
         var auth = AuthFor(method, classAuthorize, id);
         var summary = TryGetSummary(method);
 
@@ -221,7 +221,7 @@ public sealed class ControllerAnalyzer
         return "query";
     }
 
-    private IReadOnlyList<ApiResponse> Responses(MethodDeclarationSyntax method)
+    private IReadOnlyList<ApiResponse> Responses(MethodDeclarationSyntax method, string verb)
     {
         var responses = new List<ApiResponse>();
         var seen = new HashSet<int>();
@@ -259,25 +259,26 @@ public sealed class ControllerAnalyzer
             }
         }
 
-        // Fall back to the return type for a 200 if nothing else covers it.
-        if (!seen.Contains(200))
+        // No explicit 2xx declared? Infer a success response by HTTP convention.
+        if (!responses.Any(r => r.Status is >= 200 and < 300))
         {
             var returnSchema = ReturnSchema(method.ReturnType);
-            if (returnSchema is not null)
-            {
-                responses.Add(new ApiResponse(200, Schema: returnSchema));
-                seen.Add(200);
-            }
-        }
-
-        if (responses.Count == 0)
-        {
-            responses.Add(new ApiResponse(200));
+            var status = SuccessStatus(verb, returnSchema is not null);
+            responses.Add(new ApiResponse(status, Schema: status == 204 ? null : returnSchema));
         }
 
         responses.Sort((a, b) => a.Status.CompareTo(b.Status));
         return responses;
     }
+
+    /// <summary>Conventional success status when none is declared.</summary>
+    private static int SuccessStatus(string verb, bool hasBody) => verb switch
+    {
+        "POST" => 201,
+        "DELETE" => 204,
+        "PUT" or "PATCH" => hasBody ? 200 : 204,
+        _ => 200,
+    };
 
     private JsonObject? ReturnSchema(TypeSyntax returnType)
     {
