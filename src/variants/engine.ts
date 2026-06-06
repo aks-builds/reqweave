@@ -289,7 +289,54 @@ function exhaustiveVariants(ep: Endpoint, success: number): RequestVariant[] {
     }
   }
 
+  out.push(...bodyFieldVariants(ep, success));
   return out;
+}
+
+/** Expand enum members and numeric boundaries of top-level request-body fields. */
+function bodyFieldVariants(ep: Endpoint, success: number): RequestVariant[] {
+  const out: RequestVariant[] = [];
+  const schema = ep.requestBody?.schema;
+  if (!schema || schema.type !== "object" || !schema.properties) return out;
+
+  const props = schema.properties as Record<string, JsonSchemaNode>;
+  for (const [field, fieldSchema] of Object.entries(props)) {
+    if (Array.isArray(fieldSchema.enum)) {
+      for (const member of fieldSchema.enum as unknown[]) {
+        out.push(withBodyField(ep, success, field, member, `body.${field} = ${String(member)}`, "enum-member"));
+      }
+    } else if (typeof fieldSchema.minimum === "number" || typeof fieldSchema.maximum === "number") {
+      if (typeof fieldSchema.minimum === "number") {
+        out.push(withBodyField(ep, success, field, fieldSchema.minimum, `body.${field} = minimum`, "boundary-min"));
+      }
+      if (typeof fieldSchema.maximum === "number") {
+        out.push(withBodyField(ep, success, field, fieldSchema.maximum, `body.${field} = maximum`, "boundary-max"));
+      }
+    }
+  }
+  return out;
+}
+
+function withBodyField(
+  ep: Endpoint,
+  success: number,
+  field: string,
+  value: unknown,
+  name: string,
+  provenance: string,
+): RequestVariant {
+  const v = build(ep, {
+    name,
+    expectedStatus: success,
+    includeOptional: true,
+    includeAuth: ep.auth.required,
+    bodyKind: "valid",
+    provenance: [provenance],
+  });
+  if (v.body && v.body.value && typeof v.body.value === "object") {
+    (v.body.value as Record<string, unknown>)[field] = value;
+  }
+  return v;
 }
 
 // --- helpers ---
