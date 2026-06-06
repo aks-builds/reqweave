@@ -5,7 +5,7 @@ import {
   resolvePath,
   queryString,
   deterministicId,
-  groupByEndpoint,
+  groupByTag,
   bodyText,
   stableStringify,
   slug,
@@ -66,10 +66,17 @@ export const postmanExporter: Exporter = {
         name: ctx.ir.service.name,
         schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
       },
-      item: groupByEndpoint(ctx.variants).map((g) => ({
-        name: g.endpointId,
-        item: g.variants.map((v) => requestItem(v, ctx.options.tests ? assertionsFor(ctx.ir, v) : undefined)),
-      })),
+      item: groupByTag(ctx.ir, ctx.variants).map((tg) => {
+        const endpointFolders = tg.endpoints.map((g) => ({
+          name: g.endpointId,
+          item: g.variants.map((v) => requestItem(v, ctx.options.tests ? assertionsFor(ctx.ir, v) : undefined)),
+        }));
+        // Untagged endpoint (tag === id, single endpoint): don't double-wrap.
+        if (tg.endpoints.length === 1 && tg.tag === tg.endpoints[0]?.endpointId) {
+          return endpointFolders[0];
+        }
+        return { name: tg.tag, item: endpointFolders };
+      }),
       variable: [{ key: "baseUrl", value: ctx.options.baseUrl }],
     };
 

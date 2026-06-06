@@ -31,6 +31,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Cursor, Codex, OpenCode, Gemini, Windsurf); `--only`/`--skip`/`--force`/`--dry-run`.
 - **Project config + `reqweave init`** (Bundle A): optional `reqweave.config.json`
   (tools/depth/baseUrl/out/service/tests/build); precedence defaults < config < flags.
+- **Postman tag folders** (Bundle A): tagged endpoints are grouped under tag
+  folders (with endpoint subfolders); untagged endpoints stay top-level.
 - **OpenAPI examples** (Bundle A): request + response examples embedded in the spec.
 - **Runnable test assertions** in collections (Bundle A): each request asserts
   the variant's expected status, content-type, and — in Postman — the response
