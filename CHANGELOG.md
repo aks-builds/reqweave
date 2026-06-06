@@ -38,6 +38,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   flagged). `--build` auto-discovers `openapi.json` / `swagger.json` in the project
   tree; reqweave never executes project code — the project's build emits the doc,
   reqweave only reads it. Degrades cleanly to static with a clear diagnostic.
+- **Prebuilt per-OS analyzer binaries** (Bundle B): self-contained native binaries
+  packed as optional, os/cpu-gated npm packages (`@reqweave/analyzer-<platform>-<arch>`)
+  so consumers run reqweave with **no .NET SDK**. The runtime resolves the host's
+  package and **verifies its SHA-256 checksum before execution** (mismatch/missing
+  sidecar → refuse to run). Resolution order: `--ir`/`--openapi` → `REQWEAVE_ANALYZER`
+  → prebuilt package → .NET SDK. Per-OS build/pack via `scripts/pack-analyzer-binaries.mjs`
+  and the `binaries` CI workflow (artifacts only; publishing is a separate step).
 - **Richer auth-scheme detection** (Bundle B): classify JWT/bearer, OAuth2/OIDC,
   API-key, and basic from `AddAuthentication` wiring and
   `[Authorize(AuthenticationSchemes=…)]`; the "assumed Bearer" diagnostic now

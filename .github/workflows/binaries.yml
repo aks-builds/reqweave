@@ -1,0 +1,59 @@
+name: binaries
+
+# Build self-contained, per-OS analyzer binaries and pack them as optional npm
+# packages (@reqweave/analyzer-<platform>-<arch>) so consumers run reqweave with
+# NO .NET SDK. Each binary carries a SHA-256 sidecar the runtime verifies before
+# execution. This workflow only BUILDS + uploads artifacts; publishing to npm is
+# a separate, explicit step (and is gated on an owner decision).
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  pack:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rids: "linux-x64 linux-arm64"
+          - os: windows-latest
+            rids: "win-x64"
+          - os: macos-latest
+            rids: "osx-arm64 osx-x64"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build + pack analyzer binaries
+        shell: bash
+        run: node scripts/pack-analyzer-binaries.mjs ${{ matrix.rids }}
+
+      - name: Verify checksums are present
+        shell: bash
+        run: |
+          set -e
+          found=0
+          for sum in $(find dist-binaries/@reqweave -name '*.sha256'); do
+            dir=$(dirname "$sum"); bin="${sum%.sha256}"
+            test -f "$bin" || { echo "missing binary for $sum"; exit 1; }
+            echo "ok: $sum"; found=$((found+1))
+          done
+          test "$found" -gt 0 || { echo "no binaries packed"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: analyzer-binaries-${{ matrix.os }}
+          path: dist-binaries/@reqweave/**
+          if-no-files-found: error

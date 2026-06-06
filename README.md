@@ -57,10 +57,11 @@ Then import the generated files into your tool and start hitting the API.
 
 ## Requirements
 - **Node.js ≥ 20** for the CLI/MCP.
-- For analyzing **.NET source**: the **.NET SDK** (static analysis runs `dotnet`). Alternatives when no SDK is available:
-  - Set `REQWEAVE_ANALYZER` to a prebuilt analyzer binary, or
-  - Pass `--ir <file>` with an existing IR/OpenAPI document.
-  > Prebuilt, per-OS analyzer binaries (so npm consumers don't need the SDK) are planned (M1.5).
+- For analyzing **.NET source**: either a **prebuilt analyzer binary** (no SDK) or the **.NET SDK**. Resolution order:
+  - `--ir <file>` / `--openapi <file>` — use an existing IR / OpenAPI doc (no analyzer at all).
+  - `REQWEAVE_ANALYZER` — an explicit analyzer binary/dll you point at.
+  - **Prebuilt, per-OS package** `@reqweave/analyzer-<platform>-<arch>` — a self-contained native binary installed automatically (as an optional dependency, os/cpu-gated) and **checksum-verified before it runs**. No .NET SDK needed.
+  - The **.NET SDK** (`dotnet run` the analyzer) — the dev/source fallback.
 
 ## Design principles
 - **No code execution by default** — static read; `--build` is opt-in.
