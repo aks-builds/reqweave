@@ -5,9 +5,9 @@ coverage/
 *.tsbuildinfo
 npm-debug.log*
 
-# .NET
-[Bb]in/
-[Oo]bj/
+# .NET build output (scoped to the analyzer so it does NOT match the Node CLI's bin/)
+analyzer/**/bin/
+analyzer/**/obj/
 *.user
 
 # OS / editor
