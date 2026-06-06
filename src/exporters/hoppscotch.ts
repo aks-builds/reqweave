@@ -1,10 +1,21 @@
 import type { Exporter, ExportContext, ExportedFile } from "./types.js";
 import type { RequestVariant } from "../variants/index.js";
+import { assertionsFor, type AssertionSet } from "./assertions.js";
 import { resolvePath, rewritePlaceholders, bodyText, groupByEndpoint, stableStringify, slug, usedVariables } from "./util.js";
 
 const tx = (s: string) => rewritePlaceholders(s, "angle");
 
-function request(v: RequestVariant): unknown {
+function testScript(a: AssertionSet): string {
+  const lines = [`pw.test("status is ${a.status}", () => { pw.expect(pw.response.status).toBe(${a.status}); });`];
+  if (a.contentType) {
+    lines.push(
+      `pw.test("content-type is ${a.contentType}", () => { pw.expect(pw.response.headers["content-type"] || "").toInclude("${a.contentType}"); });`,
+    );
+  }
+  return lines.join("\n"); // JSON-schema not expressible -> fallback (status + content-type)
+}
+
+function request(v: RequestVariant, assertions?: AssertionSet): unknown {
   const body = bodyText(v);
   return {
     v: "11",
@@ -19,7 +30,7 @@ function request(v: RequestVariant): unknown {
         : { contentType: v.body!.contentType, body: tx(body) },
     auth: { authType: "none", authActive: false },
     preRequestScript: "",
-    testScript: "",
+    testScript: assertions ? testScript(assertions) : "",
   };
 }
 
@@ -34,7 +45,7 @@ export const hoppscotchExporter: Exporter = {
         v: 6,
         name: g.endpointId,
         folders: [],
-        requests: g.variants.map(request),
+        requests: g.variants.map((v) => request(v, ctx.options.tests ? assertionsFor(ctx.ir, v) : undefined)),
         auth: { authType: "none", authActive: false },
         headers: [],
       })),

@@ -88,7 +88,7 @@ function analyzeOpts(f: Flags): { path: string; opts: AnalyzeOptions } | null {
 }
 
 function cmdGenerate(args: string[]): number {
-  const f = parseFlags(args, new Set(["build", "strict"]));
+  const f = parseFlags(args, new Set(["build", "strict", "no-tests"]));
   const a = analyzeOpts(f);
   if (!a) return 2;
 
@@ -123,6 +123,7 @@ function cmdGenerate(args: string[]): number {
     options: {
       baseUrl: f.values["base-url"] ?? DEFAULT_BASE_URL,
       generatedAt: f.values["generated-at"] ?? DEFAULT_GENERATED_AT,
+      tests: !f.bools.has("no-tests"),
     },
   });
 
@@ -183,7 +184,7 @@ function printUsage(): void {
     `reqweave v${version()} - code in, importable API collections out.\n\n` +
       `Usage:\n` +
       `  reqweave generate <path> [--out DIR] [--tools all|a,b] [--depth ${DEPTH_LEVELS.join("|")}]\n` +
-      `                           [--base-url URL] [--service NAME] [--build] [--strict] [--ir FILE]\n` +
+      `                           [--base-url URL] [--service NAME] [--build] [--strict] [--no-tests] [--ir FILE]\n` +
       `  reqweave list-endpoints <path> [--build] [--ir FILE]\n` +
       `  reqweave inspect <path> <endpointId> [--depth LEVEL] [--ir FILE]\n\n` +
       `Tools: ${SUPPORTED_TOOLS.join(", ")}\n`,

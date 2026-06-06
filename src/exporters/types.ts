@@ -8,6 +8,8 @@ export interface ExportOptions {
   baseUrl?: string;
   /** Stamp for formats that record an export time (kept explicit for determinism). */
   generatedAt?: string;
+  /** Emit runnable test assertions into collections (default true). */
+  tests?: boolean;
 }
 
 export interface ExportedFile {

@@ -1,5 +1,14 @@
 import type { Exporter, ExportContext, ExportedFile } from "./types.js";
+import { assertionsFor, type AssertionSet } from "./assertions.js";
 import { resolvePath, queryString, bodyText, deterministicId, groupByEndpoint, stableStringify, slug, usedVariables } from "./util.js";
+
+function thunderTests(a: AssertionSet): unknown[] {
+  const tests: unknown[] = [{ type: "res-code", custom: "", action: "equal", value: String(a.status) }];
+  if (a.contentType) {
+    tests.push({ type: "res-header", custom: "content-type", action: "contains", value: a.contentType });
+  }
+  return tests; // JSON-schema not expressible in Thunder tests -> fallback (status + content-type)
+}
 
 export const thunderExporter: Exporter = {
   id: "thunder-client",
@@ -13,7 +22,7 @@ export const thunderExporter: Exporter = {
     for (const g of groupByEndpoint(ctx.variants)) {
       for (const v of g.variants) {
         const body = bodyText(v);
-        requests.push({
+        const request: Record<string, unknown> = {
           _id: deterministicId(`${v.endpointId}:${v.name}`),
           colId,
           containerId: "",
@@ -26,7 +35,11 @@ export const thunderExporter: Exporter = {
           headers: v.headers.map((h) => ({ name: h.name, value: h.value })),
           params: v.query.map((q) => ({ name: q.name, value: q.value, isPath: false })),
           body: body === undefined ? { type: "none" } : { type: "json", raw: body, form: [] },
-        });
+        };
+        if (ctx.options.tests) {
+          request.tests = thunderTests(assertionsFor(ctx.ir, v));
+        }
+        requests.push(request);
       }
     }
 
