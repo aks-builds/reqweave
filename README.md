@@ -13,9 +13,9 @@ No more hand-building API requests, and no more collections drifting from code.
 
 > [!NOTE]
 > **Status: functional for ASP.NET Core (REST + minimal APIs), Node/TypeScript
-> (NestJS + Express), and Python (FastAPI + Flask).** Build-mode reconciliation,
-> OpenAPI import, and prebuilt SDK-free analyzer binaries are in. Java/Go
-> analyzers are next on the roadmap. See the
+> (NestJS + Express), Python (FastAPI + Flask), and Java (Spring Boot).**
+> Build-mode reconciliation, OpenAPI import, and prebuilt SDK-free analyzer
+> binaries are in. A Go analyzer is next on the roadmap. See the
 > [design spec](docs/superpowers/specs/2026-06-06-reqweave-design.md) and
 > [implementation plan](docs/superpowers/plans/2026-06-06-reqweave-implementation-plan.md).
 
@@ -42,7 +42,7 @@ Then import the generated files into your tool and start hitting the API.
 
 | Command | Purpose |
 |---|---|
-| `reqweave generate <path>` | Generate collections. Flags: `--lang auto\|dotnet\|ts\|py`, `--out`, `--tools all\|a,b`, `--depth minimal\|standard\|exhaustive`, `--base-url`, `--service`, `--build`, `--build-openapi FILE`, `--openapi FILE`, `--strict`, `--ir FILE`. |
+| `reqweave generate <path>` | Generate collections. Flags: `--lang auto\|dotnet\|ts\|py\|java`, `--out`, `--tools all\|a,b`, `--depth minimal\|standard\|exhaustive`, `--base-url`, `--service`, `--build`, `--build-openapi FILE`, `--openapi FILE`, `--strict`, `--ir FILE`. |
 | `reqweave list-endpoints <path>` | List discovered endpoints. |
 | `reqweave inspect <path> <id>` | Show the variants for one endpoint (with provenance). |
 
@@ -66,6 +66,7 @@ Then import the generated files into your tool and start hitting the API.
   - The **.NET SDK** (`dotnet run` the analyzer) — the dev/source fallback.
 - For analyzing **Node/TypeScript source** (NestJS/Express): nothing extra — analysis runs **in-process** via the bundled `typescript` parser. No SDK, no code execution.
 - For analyzing **Python source** (FastAPI/Flask): nothing extra — a dependency-free, in-process reader. No Python runtime, no code execution.
+- For analyzing **Java source** (Spring Boot): nothing extra — a dependency-free, in-process reader. No JVM/JDK, no code execution.
 
 ## Design principles
 - **No code execution by default** — static read; `--build` is opt-in.

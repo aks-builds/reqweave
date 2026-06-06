@@ -88,6 +88,19 @@ describe("other commands", () => {
     expect(openapi.paths["/pets"].post).toBeDefined();
   });
 
+  it("generate --lang java analyzes a Spring project end to end (C3, no JVM)", () => {
+    const javaDir = path.join(here, "fixtures", "java");
+    const out = mkdtempSync(path.join(tmpdir(), "reqweave-java-"));
+    const code = run([
+      "generate", javaDir, "--lang", "java", "--service", "petstore", "--out", out,
+      "--tools", "openapi", "--generated-at", "2026-01-01T00:00:00Z",
+    ]);
+    expect(code).toBe(0);
+    const openapi = JSON.parse(readFileSync(path.join(out, "openapi", "petstore.openapi.json"), "utf8"));
+    expect(openapi.paths["/pets/{id}"].get).toBeDefined();
+    expect(openapi.paths["/pets"].post).toBeDefined();
+  });
+
   it("generate --openapi imports an OpenAPI doc end to end (B1)", () => {
     const openapi = path.join(here, "fixtures", "openapi", "petstore.openapi.json");
     const out = mkdtempSync(path.join(tmpdir(), "reqweave-oapi-"));
