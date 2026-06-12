@@ -1,32 +1,100 @@
-name: publish
+name: Publish
 
-# Ships the npm package when a GitHub release is published (release.yml opens the
-# release PR; merging it and publishing the release triggers this).
-#
-# Required repo secret: NPM_TOKEN (npm automation token).
+# Post-merge half of the release pipeline. Fires when a release/* PR
+# is merged into main. Tags the commit, publishes to npm with
+# provenance, and creates a GitHub release.
+# See release.yml for the prepare step (PR creation).
 
 on:
-  release:
-    types: [published]
+  pull_request:
+    types: [closed]
+    branches: [main]
 
 permissions:
-  contents: read
-  id-token: write # npm provenance
+  contents: write   # create tag + GitHub release
+  id-token: write   # npm provenance (sigstore attestation)
 
 jobs:
-  npm:
+  publish:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          registry-url: https://registry.npmjs.org
           cache: npm
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "aks-builds"
+          git config --global user.email "its.aks@outlook.com"
+
       - run: npm ci
-      - run: npm run build
-      - run: npm test
+
+      - name: Resolve release identifiers
+        id: ver
+        run: |
+          VERSION=$(jq -r .version package.json)
+          if printf '%s' "$VERSION" | grep -q -- '-'; then
+            DISTTAG=alpha
+            PRERELEASE=true
+          else
+            DISTTAG=latest
+            PRERELEASE=false
+          fi
+          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"          >> "$GITHUB_OUTPUT"
+          echo "disttag=$DISTTAG"       >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Abort if tag already exists
+        run: |
+          if git rev-parse "refs/tags/${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "${{ steps.ver.outputs.tag }} already published — exiting."
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --access public --tag ${{ steps.ver.outputs.disttag }} --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          awk -v ver="$VERSION" '
+            $0 ~ ("^## \[" ver "\]") { flag=1; next }
+            flag && /^## \[/           { exit }
+            flag                       { print }
+          ' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || echo "Release $VERSION." > release-notes.md
+
+      - name: Tag the commit and push
+        run: |
+          git tag "${{ steps.ver.outputs.tag }}"
+          git push origin "${{ steps.ver.outputs.tag }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          [ "${{ steps.ver.outputs.prerelease }}" = "true" ] && PRERELEASE_FLAG="--prerelease"
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            --title "${{ steps.ver.outputs.tag }}" \
+            --notes-file release-notes.md \
+            --target main \
+            $PRERELEASE_FLAG

@@ -8,7 +8,7 @@ name: release
 #
 # Required repo secrets:
 #   - NPM_TOKEN       (consumed by publish.yml) — npm automation token.
-#   - RELEASE_PR_PAT  — a user PAT (repo scope). GITHUB_TOKEN cannot open the PR
+#   - APPROVER_PAT  — a user PAT (repo scope). GITHUB_TOKEN cannot open the PR
 #                       here: PRs it opens do NOT trigger downstream workflows,
 #                       so the required `test` check would never run.
 
@@ -38,7 +38,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_PR_PAT }}
+          token: ${{ secrets.APPROVER_PAT }}
 
       - uses: actions/setup-node@v6
         with:
@@ -50,8 +50,8 @@ jobs:
 
       - name: Configure git identity
         run: |
-          git config user.name "aks-builds"
-          git config user.email "its.aks@outlook.com"
+          git config --global user.name "aks-builds"
+          git config --global user.email "its.aks@outlook.com"
 
       - name: Test (Node + .NET)
         run: |
@@ -127,7 +127,7 @@ jobs:
 
       - name: Open PR and enable auto-merge
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PR_PAT }}
+          GH_TOKEN: ${{ secrets.APPROVER_PAT }}
         run: |
           set -euo pipefail
           PR_URL=$(gh pr create --base main --head "${{ steps.bump.outputs.branch }}" \
