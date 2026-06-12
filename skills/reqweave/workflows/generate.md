@@ -14,7 +14,7 @@ reqweave generate <path> [options]
 | `--depth LEVEL` | `standard` | `minimal` \| `standard` \| `exhaustive` (see choosing-depth). |
 | `--base-url URL` | `http://localhost:5000` | Default value written into env templates. |
 | `--service NAME` | derived from path | Service/collection name. |
-| `--lang auto\|dotnet\|ts` | `auto` | Source language. `auto` detects from project files; `ts` = Node/TypeScript (NestJS/Express, analyzed in-process, no SDK). |
+| `--lang auto\|dotnet\|ts\|py\|java` | `auto` | Source language. `auto` detects from project files. `ts` = Node/TypeScript (NestJS/Express), `py` = Python (FastAPI/Flask), `java` = Spring Boot. All analyzed in-process — no SDK/runtime/JVM. |
 | `--build` | off | Build-mode: reconcile static analysis with the project's build-produced OpenAPI as ground truth. |
 | `--build-openapi FILE` | — | Build-mode ground truth: reconcile with this build-produced OpenAPI doc. |
 | `--openapi FILE` | — | Skip the analyzer and import any OpenAPI 3.x doc directly. |

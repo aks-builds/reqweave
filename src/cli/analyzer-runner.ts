@@ -14,8 +14,10 @@ import { join, resolve } from "node:path";
 import { parseIr, importOpenApi, reconcile, type Ir } from "../ir/index.js";
 import { resolvePrebuiltAnalyzer, prebuiltPackageName } from "./prebuilt.js";
 import { analyzeTypeScript } from "../analyzers/ts/index.js";
+import { analyzePython } from "../analyzers/python/index.js";
+import { analyzeJava } from "../analyzers/java/index.js";
 
-export type Language = "auto" | "dotnet" | "ts";
+export type Language = "auto" | "dotnet" | "ts" | "py" | "java";
 
 export interface AnalyzeOptions {
   build?: boolean;
@@ -90,6 +92,12 @@ function runStaticAnalyzer(sourcePath: string, opts: AnalyzeOptions): Ir {
   if (language === "ts") {
     return analyzeTypeScript(sourcePath, { service: opts.service, generatedAt: opts.generatedAt });
   }
+  if (language === "py") {
+    return analyzePython(sourcePath, { service: opts.service, generatedAt: opts.generatedAt });
+  }
+  if (language === "java") {
+    return analyzeJava(sourcePath, { service: opts.service, generatedAt: opts.generatedAt });
+  }
 
   const outFile = join(mkdtempSync(join(tmpdir(), "reqweave-")), "ir.json");
   const args = [sourcePath, "--out", outFile];
@@ -148,12 +156,26 @@ function resolveLanguage(sourcePath: string, requested: Language): Language {
     entries = null;
   }
   if (entries === null) {
-    return /\.(ts|tsx|mts|cts)$/i.test(base) ? "ts" : "dotnet";
+    if (/\.(ts|tsx|mts|cts)$/i.test(base)) return "ts";
+    if (/\.py$/i.test(base)) return "py";
+    if (/\.java$/i.test(base)) return "java";
+    return "dotnet";
   }
   if (entries.some((e) => e.endsWith(".csproj") || e.endsWith(".sln"))) return "dotnet";
+  if (entries.includes("pom.xml") || entries.includes("build.gradle") || entries.includes("build.gradle.kts")) return "java";
   if (entries.includes("package.json") || entries.includes("tsconfig.json") || entries.some((e) => /\.(ts|tsx)$/.test(e))) {
     return "ts";
   }
+  if (
+    entries.includes("pyproject.toml") ||
+    entries.includes("requirements.txt") ||
+    entries.includes("setup.py") ||
+    entries.includes("pipfile") ||
+    entries.some((e) => /\.py$/.test(e))
+  ) {
+    return "py";
+  }
+  if (entries.some((e) => /\.java$/.test(e))) return "java";
   return "dotnet";
 }
 

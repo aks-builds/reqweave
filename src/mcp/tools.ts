@@ -21,7 +21,7 @@ export interface ToolDef {
 
 const sourceProps = {
   path: { type: "string", description: "Path to the service codebase (directory/.csproj/.sln)." },
-  lang: { type: "string", enum: ["auto", "dotnet", "ts"], description: "Source language (default auto-detect)." },
+  lang: { type: "string", enum: ["auto", "dotnet", "ts", "py", "java"], description: "Source language (default auto-detect)." },
   ir: { type: "string", description: "Path to an existing IR JSON; skips the analyzer." },
   openapi: { type: "string", description: "Path to an OpenAPI 3.x doc; imported as IR (skips the analyzer)." },
   build: { type: "boolean", description: "Build-mode: reconcile static analysis with a build-produced OpenAPI (auto-found in the project tree)." },
@@ -33,7 +33,7 @@ function irFrom(args: Record<string, unknown>) {
     irFile: args.ir as string | undefined,
     openapiFile: args.openapi as string | undefined,
     buildOpenapiFile: args.buildOpenapi as string | undefined,
-    language: (args.lang as "auto" | "dotnet" | "ts" | undefined) ?? "auto",
+    language: (args.lang as "auto" | "dotnet" | "ts" | "py" | "java" | undefined) ?? "auto",
     build: Boolean(args.build),
     service: args.service as string | undefined,
     generatedAt: DEFAULT_GENERATED_AT,

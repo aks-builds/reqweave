@@ -7,6 +7,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Java analyzer** (Bundle C): a fourth source language (Spring Boot) via a
+  dependency-free, synchronous brace-aware reader (no parser/JVM). Extracts
+  `@RestController`/`@Controller` + `@RequestMapping` base paths, `@GetMapping`/…
+  methods (and `@RequestMapping(method=)`), `@PathVariable`/`@RequestParam`/
+  `@RequestHeader`/`@RequestBody` params, return-type responses (unwrapping
+  `ResponseEntity`/`Optional`/`List`/`Flux`…), `@ResponseStatus`, and
+  `@PreAuthorize`/`@Secured`/`@RolesAllowed` auth. POJO/record DTOs + Enums and
+  Bean-Validation `@NotNull` (→ required) resolved cross-file. `--lang java`
+  (auto-detected from `pom.xml`/`build.gradle`/`.java`). Shares a small C-like
+  lexer with the Go reader.
+- **Python analyzer** (Bundle C): a third source language via a dependency-free,
+  fully **synchronous** pattern-based reader (string/comment-aware logical-line
+  builder — no parser/runtime needed). Extracts **FastAPI**
+  (`@app/@router.<method>`/`api_route(methods=)`, signature params → path/query,
+  Pydantic-model bodies, `response_model`/return-type + `status_code` responses,
+  `Depends`/`Security`/`OAuth2`/`HTTPBasic`/API-key auth, `tags`) and **Flask**
+  (`@app.route(methods=[…])` + 2.0 `@app.get`, `<int:id>` → `{id}`, best-effort
+  query/body from `request.args`/`request.json` with diagnostics). Pydantic
+  models/dataclasses/Enums resolved cross-file (Optional/List/Dict/Union/Literal).
+  `--lang py` (auto-detected from `pyproject.toml`/`requirements.txt`/`.py`).
 - **TypeScript/Node analyzer** (Bundle C): a second source language, analyzed
   **in-process** via the TypeScript compiler API (lazy-loaded) — no external
   runtime/SDK. Extracts **NestJS** (`@Controller`/`@Get`…/`@Param`/`@Query`/
