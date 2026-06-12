@@ -54,7 +54,7 @@
   "author": "aks-builds",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.14.0",
+    "@types/node": "^25.9.2",
     "vitest": "^2.0.0"
   },
   "dependencies": {
